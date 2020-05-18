@@ -1,0 +1,73 @@
+---
+
+- set_fact:
+    vnc_url: "{{ server_vnc_url | mandatory }}"
+
+- name: get the root disklabel
+  set_fact:
+      main_disklabel: "{{ mount_points['/'].split('.') | first }}"
+  vars:
+      mount_points: "{{ ansible_mounts | items2dict(key_name='mount', value_name='device') }}"
+
+- name: search for drive from disklabel
+  shell: sysctl hw.disknames | tr ',' '\n' | grep {{ main_disklabel }}
+  register: main_drive_out
+
+- set_fact:
+    raw_char_device: "/dev/r{{ main_drive_out.stdout.split(':') | first }}c"
+
+- name: check wheter a image backup exists
+  stat:
+    path: /bsd.old
+  register: bsd_bkp_st
+
+- name: backup current bsd image
+  copy: 
+    src: /bsd
+    dest: /bsd.old
+    remote_src: yes
+    force: yes
+    mode: preserve
+  when: not bsd_bkp_st.stat.exists
+
+- debug:
+    msg: On unexpected situations, you will always able to boot OpenBSD from /bsd.old
+
+- name: copy bsd.rd to default boot location
+  copy: 
+    src: /bsd.rd
+    dest: /bsd
+    remote_src: yes
+    force: yes
+    mode: preserve
+
+- name: reboot the system to install new image
+  reboot:
+    reboot_timeout: 0
+    msg: Reboot initiated by ansible. Installing new system...
+  ignore_errors: yes
+
+- name: wait a safe time and write random data to disk
+  browser_vnc:
+    early_pause:
+      prompt: Wait until a screen with "(I)nstall, (U)pdate, (A)utoinstall or (S)hell" opens
+      seconds: 30
+    later_pause:
+      minutes: "{{ stop_on_erase | default(false) | bool | ternary(omit, erase_wait_minutes) }}"
+      prompt: |
+        This will take a long time. 
+        Wait until you see "... records in ... records out ... bytes transferred in ..."
+    url: "{{ server_vnc_url | mandatory }}"
+    lines:
+      - Shell
+      - cd /dev && sh MAKEDEV sd0 ; dd if=/dev/urandom of={{ raw_char_device }} bs=1m
+
+- name: ensure openbsd instance is reinstalled from scratch
+  vultr_server:
+    name: "{{ server_name }}"
+    hostname: "{{ server_hostname }}"
+    os: "OpenBSD 6.6 x64"
+    plan: "{{ server_plan | string }}" 
+    region: "{{ server_region | string }}"
+    state: reinstalled
+  connection: local

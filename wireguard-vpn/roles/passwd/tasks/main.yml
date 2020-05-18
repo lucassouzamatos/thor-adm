@@ -1,0 +1,24 @@
+---
+
+- block:
+    - include_tasks: run_method.yml
+      vars:
+        task: _kpxc.yml
+        pwd_var: kpxc_pwd
+        pwd_key: password
+  rescue:
+    - include_tasks: run_method.yml
+      vars:
+        task: _prompt.yml
+        pwd_var: prompt_pwd
+        pwd_key: user_input
+  tags:
+    - kpxc-pwd
+
+- block:
+  - include_tasks: run_method.yml
+    vars:
+      task: _prompt.yml
+      pwd_var: prompt_pwd
+      pwd_key: user_input
+  when: input_password is not defined

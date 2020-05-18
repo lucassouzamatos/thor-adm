@@ -1,0 +1,117 @@
+---
+
+- name: define the new password for root account on new installation
+  include_role: 
+    name: passwd
+  vars:
+    login: root
+    group: "{{ kpxc_root_group }}"
+    algo: "{{ pwd_hash_algo }}"
+    prompt: "Root password:"
+    ansible_connection: local
+    ansible_become: no
+
+- include_tasks: roles/common/tasks/ssh/key_discover.yml
+  vars:
+    ansible_become: no
+    ansible_connection: local
+  when: ssh_pubkey is not defined
+
+- name: make sure base directory exists
+  file:
+    path: "{{ auto_install_basedir }}"
+    state: directory
+
+- name: check wheter has a bsd.rd copy
+  stat: 
+    path: "{{ bsdimg }}"
+  register: bsd_img_st
+
+- name: make sure to copy boot image
+  get_url:
+    url: "{{ mirror }}/bsd.rd"
+    dest: "{{ auto_install_basedir }}"
+    checksum: "{{ bsd_rd_checksum }}"
+    owner: root
+    group: wheel
+    mode: 0600
+  when: not bsd_img_st.stat.exists
+
+- name: check bsd filesystem
+  stat: 
+    path: "{{ bsdfs }}"
+  register: bsd_fs_st
+
+- name: extract filesystem from image
+  shell: rdsetroot -x {{ bsdimg }} {{ bsdfs }}
+  when: not bsd_fs_st.stat.exists
+  
+- name: make sure vnode directory exists
+  file:
+    path: "{{ mntdir }}"
+    state: directory
+  
+- name: make sure vnode directory is not mounted
+  mount: 
+    path: "{{ mntdir }}"
+    state: unmounted
+  
+- name: unconfigure vnode
+  shell: vnconfig -u {{ vnd_dev }}
+  ignore_errors: yes
+
+- name: create vnode
+  shell: vnconfig {{ vnd_dev }} {{ bsdfs }}
+
+- name: mount vnode directory
+  shell: mount {{ vndpath }} {{ mntdir }}
+
+- name: copy auto install
+  template:
+    src: net.conf.j2
+    dest: "{{ mntdir }}/auto_install.conf"
+    backup: yes
+    force: yes
+    owner: root
+    group: wheel
+    mode: 0600
+  vars:
+    root_password: "{{ input_password }}"
+    root_ssh_pubkey: "{{ lookup('file', ssh_pubkey) }}"
+
+- name: make sure to unmount vnode directory
+  mount: 
+    path: "{{ mntdir }}"
+    state: unmounted
+
+- name: make sure to unconfigure vnd
+  shell: vnconfig -u "{{ vnd_dev }}"
+
+- name: change image through file system
+  shell: rdsetroot {{ bsdimg }} {{ bsdfs }}
+
+- name: copy bsd.rd to default boot location
+  copy: 
+    src: "{{ bsdimg }}"
+    dest: /bsd
+    backup: yes
+    remote_src: yes
+    force: yes
+    mode: preserve
+
+- name: reboot the system to install new image
+  reboot:
+    reboot_timeout: 0
+    msg: Reboot initiated by ansible. Installing new system...
+  ignore_errors: yes
+
+- name: wait for machine to install and run
+  wait_for:
+    host: "{{ ansible_host }}"
+    state: started
+    port: 22
+    delay: 30
+    connect_timeout: 120
+    timeout: 600
+  become: false
+  connection: local

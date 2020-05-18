@@ -1,0 +1,12 @@
+[vpn_servers]
+#192.168.100.165     ansible_become=yes 
+
+[vpn_clients]
+#192.168.100.158     ansible_become=yes
+
+[new_bsds] 
+#207.148.113.200
+
+[child_bsds]
+144.202.66.231
+

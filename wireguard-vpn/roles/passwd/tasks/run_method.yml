@@ -1,0 +1,19 @@
+---
+
+- include_tasks: "{{ task }}"
+
+- block:
+  - set_fact:
+      input_password: "{{ plain_pwd | password_hash(algo) }}"
+    when: algo != skip_hash_algo
+
+  - set_fact:
+      input_password: "{{ plain_pwd }}"
+    no_log: true
+    when: algo == skip_hash_algo
+  vars:
+    plain_pwd: "{{ lookup('vars', pwd_var)[pwd_key] }}"
+
+- name: reset password variable from memory
+  set_fact:
+    "{{ pwd_var }}":

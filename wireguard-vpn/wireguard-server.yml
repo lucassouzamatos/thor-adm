@@ -1,0 +1,7 @@
+---
+
+- hosts: vpn_servers
+  roles:
+    - name: wireguard/server
+      tags:
+        - wg-server

@@ -1,0 +1,54 @@
+--- 
+
+- name: define configuration variable
+  set_fact:
+    conf_file: "{{ wg_basedir }}/{{ conn | mandatory }}.conf"
+
+- name: check wheter a configuration file is present
+  stat:
+    path: "{{ conf_file }}"
+  register: wg_conf_st
+  tags:
+    - server-config
+
+- shell: netstat -nl -f inet | grep -E '(tcp|udp)' | awk '{print $4}' | egrep -o '[0-9]+$'
+  register: all_running_ports_proc
+
+- set_fact:
+    all_ports: "{{ all_running_ports_proc.stdout.split('\n') }}"
+
+- name: choose a port to listen
+  set_fact:
+    choose_listenport: "{{ 65536 | random(start=1024) }}"
+  until: choose_listenport not in all_ports
+  retries: 10
+  when: not (wg is defined and 'listenport' in wg and wg.listenport | int)
+
+- set_fact:
+    wg_listen_port: "{{ choose_listenport | default(wg['listenport']) }}"
+
+- block:  
+  - include_tasks: parse_config.yml
+    tags:
+      - server-config
+  
+  - name: register clients configuration
+    include_role:
+      name: wireguard/register_clients
+
+  - include_role: 
+      name: wireguard/daemon
+    vars:
+      wg_state: restarted
+  when: wg_conf_st is not defined or not wg_conf_st.stat.exists
+
+- include_role: 
+    name: wireguard/daemon
+  when: wg_conf_st is defined and wg_conf_st.stat.exists 
+
+- name: always fix configuration permissions
+  file:
+    path: "{{ conf_file }}"
+    owner: root
+    group: wheel
+    mode: 0600

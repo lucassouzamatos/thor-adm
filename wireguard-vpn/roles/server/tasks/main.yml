@@ -1,0 +1,152 @@
+---
+
+- name: ensure cache directory exists
+  file: 
+    path: "{{ cache_dir }}"
+    state: directory
+    mode: 0755
+
+- block:
+  - name: check wheter random names file exists 
+    stat:
+      path: "{{ random_names_path }}"
+    register: random_names_st
+
+  - name: download random names files to cache
+    get_url:
+      url: "{{ random_names_provider }}"
+      dest: "{{ random_names_path }}"
+      mode: 0664
+    when: not random_names_st.stat.exists
+
+  - name: getting a nice hostname
+    set_fact:
+      server_name: "{{ lookup('file', random_names_path).split() | random }}"
+  when: server_name is not defined
+
+- include_role: 
+    name: my_pub_cidr
+  when: my_cidr is not defined
+  tags:
+    - networking
+
+- name: ensure a default firewall group exists
+  vultr_firewall_group:
+    name: "{{ firewall_group }}"
+  register: default_group
+  tags:
+    - networking
+    - instance
+
+- name: ensure we can connect to instance via ssh
+  vultr_firewall_rule:
+    group: "{{ firewall_group }}"
+    ip_version: "{{ my_ip_version }}"
+    cidr: "{{ my_cidr }}"
+    protocol: tcp
+    port: 22
+  tags:
+    - networking
+    - instance
+
+- block:
+  - name: get available regions 
+    vultr_region_info:
+    register: regions
+  
+  - name: select a region randomly
+    set_fact:
+      server_region: "{{ (regions.vultr_region_info | random).name }}"
+  when: server_region is not defined 
+  tags:
+    - instance
+
+- include_tasks: roles/common/tasks/ssh/key_discover.yml
+  when: ssh_pubkey is not defined
+  tags:
+    - instance
+    - ssh-discover
+    - ssh-key
+
+- name: ensure public key is registered
+  vultr_ssh_key:
+    name: "{{ sshkey_name | default(ansible_user) }}"
+    ssh_key: "{{ lookup('file', ssh_pubkey) }}"
+  register: generated_ssh_pubkey
+
+- debug:
+    msg: "{{ item }}"
+  with_items:
+    - "Server name: {{ server_name }}"
+    - "Server hostname: {{ server_hostname }}"
+    - "Server region: {{ server_region }}"
+    - "Allowed network: {{ my_cidr | default('not specified') }}"
+
+- name: ensure openbsd instance exists
+  vultr_server:
+    firewall_group: "{{ firewall_group }}"
+    name: "{{ server_name }}"
+    hostname: "{{ server_hostname }}"
+    os: "OpenBSD 6.6 x64"
+    plan: "{{ server_plan | string }}" 
+    region: "{{ server_region | string }}"
+    ipv6_enabled: yes
+    tag: "{{ server_tag | default(omit) }}"
+    state: "{{ server_state }}"
+    ssh_key: "{{ generated_ssh_pubkey.vultr_ssh_key.id | default(omit) }}"
+  register: generated_instance
+  tags:
+    - instance
+
+- block:
+  - name: adding new server to in-memory inventory
+    add_host:
+      name: "{{ server_ip }}"
+      groups: "{{ next_groups }}"
+
+  - name: wait for machine to install and run
+    wait_for:
+      host: "{{ server_ip }}"
+      state: started
+      port: 22
+      connect_timeout: 60
+      timeout: 400
+    become: false
+    connection: local
+
+  - include_tasks: roles/common/tasks/ssh/rescan.yml
+    vars:
+      ip_addr: "{{ server_ip }}"
+
+  - name: ensure directory of variables exists  
+    file:
+      path: "{{ vars_dir }}"
+      state: directory
+      mode: 0750
+
+  - copy:
+      dest: "{{ vars_dir }}/{{ server_name }}.yml"
+      mode: 0664
+      backup: yes
+      content: |
+        ---
+        server_name: {{ server_name }}
+        server_hostname: {{ server_hostname }}
+        server_region: {{ server_region | string }}
+        server_plan: {{ server_plan | string }}
+        server_ip: {{ server_ip }}
+        server_gateway: {{ generated_instance.vultr_server.v4_gateway }}
+        server_vnc_url: {{ generated_instance.vultr_server.kvm_url }}
+    register: server_var
+
+  - debug:
+      msg: "A file with server variables was saved at: {{ server_var.dest }}"
+      
+  - name: include server variables
+    include_vars:
+      file: "{{ server_var.dest }}"
+  when: generated_instance.changed
+  vars:
+    server_ip: "{{ generated_instance.vultr_server.v4_main_ip }}"
+  tags:
+    - instance

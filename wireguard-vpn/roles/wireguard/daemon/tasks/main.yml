@@ -1,0 +1,14 @@
+---
+
+- name: set wireguard rc.d script
+  template:
+    src: wgc
+    dest: /etc/rc.d/
+    owner: root
+    group: bin
+    mode: 0555
+
+- service:
+    name: wgc
+    state: "{{ wg_state }}"
+    enabled: yes

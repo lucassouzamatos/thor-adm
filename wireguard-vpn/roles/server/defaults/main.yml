@@ -1,0 +1,20 @@
+---
+
+ansible_connection: local
+
+random_names_provider: https://raw.githubusercontent.com/dominictarr/random-name/master/names.txt
+
+cache_dir: .cache
+random_names_file: names.txt
+
+random_names_path: "{{ cache_dir }}/{{ random_names_file }}"
+
+firewall_group: "default-block"
+server_hostname: "{{ 99999 | random | string | to_uuid }}"
+server_plan: "201"  # lower price
+server_state: present
+
+vars_dir: vars 
+
+next_groups: 
+  - new_bsds

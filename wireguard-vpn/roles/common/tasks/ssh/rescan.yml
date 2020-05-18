@@ -1,0 +1,7 @@
+---
+
+- name: remove any existing fingerprint associated with server
+  shell: ssh-keygen -R {{ ip_addr }}
+
+- name: scan new fingerprints
+  shell: ssh-keyscan {{ ip_addr }} >> {{ default_ssh_basedir }}/known_hosts

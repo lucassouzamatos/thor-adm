@@ -1,0 +1,24 @@
+---
+
+ansible_user: root
+py_version: 3.7.4
+
+kpxc_user_group: vultr/servers/{{ server_name }}
+pwd_hash_algo: bcrypt
+
+removed_pkgs:
+  - opensmtpd
+
+disabled_services:
+    - smtpd
+    - sndiod
+
+sshd_template: 
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    backup: yes
+
+doas_template:
+    src: full_doas_control.conf.j2
+    dest: /etc/doas.conf
+    backup: yes

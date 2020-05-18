@@ -1,0 +1,7 @@
+---
+
+- name: get password information
+  kpxc:
+    login: "{{ login }}"
+    group: "{{ group }}"
+  register: kpxc_pwd

@@ -1,0 +1,57 @@
+---
+
+- setup:
+    gather_subset: 
+      - network
+
+- set_fact:
+    src_file: "{{ client_file | mandatory }}"
+    conf_file: "{{ wg_basedir }}/{{ conn }}.conf" 
+
+- include_role:
+    name: wireguard/common
+
+- name: upload client configuration
+  copy:
+    src: "{{ src_file }}"
+    dest: "{{ conf_file }}"
+    owner: root
+    group: wheel
+    mode: 0400
+
+- include_role:
+    name: wireguard/daemon
+  vars:
+    wg_state: restarted
+
+- include_tasks: roles/wireguard/grab_interface.yml
+
+- shell: wg show {{ wg_if }} endpoints | awk '{printf $2}'
+  register: peer_proc
+
+- set_fact:
+    peer_ip: "{{ peer_proc.stdout.split(':') }}"
+
+- set_fact:
+    peer_addr: "{{ peer_ip | first }}"
+    peer_port: "{{ peer_ip | last | int | default(58320) }}" 
+
+- shell: wg show {{ wg_if }} allowed-ips | awk '{printf substr($0, index($0, $2))}'
+  register: allowed_ips_proc
+
+- set_fact:
+    allowed_ips: "{{ allowed_ips_proc.stdout }}"
+
+- include_role:
+    name: pf
+  vars:
+    local_addr: "{{ ansible_default_ipv4.address | default(ansible_all_ipv4_addresses | first) }}"
+
+- name: try to match ips, not 0.0.0.0 networks
+  shell: printf "{{ allowed_ips.replace(' ', '\n') }}\n" | egrep '^[^0]'
+  register: tunnel_ips_proc
+
+- name: test tunnel connectivity
+  shell: "ping -qc 5 {{ tunnel_ip }}"
+  vars:
+    tunnel_ip: "{{ (tunnel_ips_proc.stdout.split() | first).split('/') | first | default(test_ip) }}"

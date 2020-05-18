@@ -1,0 +1,14 @@
+---
+
+local_pvt_file: local.key
+local_pub_file: local.pub
+
+clients_group: vpn_clients
+client_addresses: "{{ groups[clients_group] }}" 
+
+# network
+network: 10.100.200
+cidr_netmask: 24 
+local_addr: "{{ network }}.1"
+
+white_ips_file: "{{ wg_basedir }}/white_ips"

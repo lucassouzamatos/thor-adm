@@ -1,0 +1,37 @@
+---
+
+user:
+    name: vpnop
+    shell: /bin/ksh
+    update_password: on_create
+    ssh_key_type: ed25519
+
+user_dir: "/home/{{ user.name }}"
+
+# directory  conf
+local_basedir: client-configs
+wg_basedir: /etc/wireguard
+pubkeys: "{{ wg_basedir }}/pubkeys"
+private: "{{ wg_basedir }}/private"
+
+default_ssh_authorized_keys_path: /etc/ssh/authorized_keys/
+default_ssh_basedir: "{{ lookup('env', 'HOME') }}/.ssh"
+
+ssh:
+  authorized_keys: "{{ default_ssh_authorized_keys_path }}{{ user.name }}"
+  public_key: "{{ default_ssh_basedir + '/id_' + user.ssh_key_type + '.pub' }}"
+  port: 22
+  listen_addr: 0.0.0.0
+  allow_ips: '192.168.100.1'
+
+# server firewall
+use_my_network: yes
+
+# kpxc association
+ansible_kpxc_remember: yes
+
+# browser vnc timeouts
+ansible_vnc_conn_timeout: 30
+ansible_vnc_load_timeout: 30
+
+stop_on_erase: yes

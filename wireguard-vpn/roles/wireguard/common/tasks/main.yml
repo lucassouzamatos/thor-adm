@@ -1,0 +1,7 @@
+---
+
+- include_tasks: "{{ item }}"
+  with_items:
+    - custom_become.yml
+    - install.yml
+    - filesystem.yml

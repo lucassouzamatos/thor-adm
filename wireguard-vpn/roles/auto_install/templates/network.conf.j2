@@ -1,0 +1,6 @@
+IPv4 address = {{ server_ip | default(ansible_default_ipv4.address | default(ansible_all_ipv4_addresses[0])) }}
+Netmask = {{ server_netmask | default(ansible_default_ipv4.netmask) }}
+IPv6 address = autoconf
+Default IPv4 route = {{ server_gateway | default(ansible_default_ipv4.gateway) }}
+DNS domain name = {{ server_dns_domain | default(ansible_domain) }}
+DNS nameservers = {{ server_dns_nameserver | default(ansible_dns.nameservers | first) }}

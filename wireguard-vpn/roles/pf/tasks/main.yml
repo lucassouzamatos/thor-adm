@@ -1,0 +1,16 @@
+---
+
+- name: configure pf firewall
+  template:
+    src: "{{ pf_path }}"
+    dest: /etc/pf.conf
+    backup: yes
+    owner: root
+    group: wheel
+    mode: 0600
+    validate: "pfctl -n -f %s"
+  register: pf_conf_file
+
+- name: restart pf
+  shell: pfctl -f /etc/pf.conf
+  when: pf_conf_file.changed

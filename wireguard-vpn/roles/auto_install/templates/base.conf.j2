@@ -1,0 +1,12 @@
+Choose your keyboard layout = br
+System hostname = {{ server_hostname | default(ansible_hostname) }}
+
+{% include 'network.conf.j2' %}
+
+Password for root account = {{ root_password }}
+Do you expect to run the X Window System = no
+Allow root ssh login = yes
+Public ssh key for root = {{ root_ssh_pubkey }}
+Set name(s) = -game*
+Set name(s) = -x*
+Exit to (S)hell, (H)alt or (R)eboot = R

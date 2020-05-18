@@ -1,0 +1,10 @@
+Port {{ ssh.port }}
+ListenAddress {{ ssh.listen_addr }}
+PermitRootLogin no
+AuthorizedKeysFile {{ default_ssh_authorized_keys_path }}%u
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+AllowUsers {{ user.name }}
+AllowAgentForwarding no
+AllowTcpForwarding no
+Subsystem       sftp    /usr/libexec/sftp-server

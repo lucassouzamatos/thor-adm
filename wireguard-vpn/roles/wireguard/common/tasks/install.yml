@@ -1,0 +1,13 @@
+---
+
+- block:
+  - name: check wheter wg binary is found
+    shell: wg
+    ignore_errors: yes
+    register: wg_bin_check
+
+  - name: ensure wireguard is installed
+    shell: pkg_add -I wireguard-tools wireguard-go
+    when: wg_bin_check is failed
+  tags:
+    - server-config

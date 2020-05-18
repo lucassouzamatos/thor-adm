@@ -1,0 +1,8 @@
+---
+
+- hosts: vpn_clients 
+
+  roles:
+    - name: wireguard/client
+      tags:
+        - wg-client

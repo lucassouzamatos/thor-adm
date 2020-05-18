@@ -1,0 +1,33 @@
+---
+
+- hosts: instances
+  tasks:
+    - apt:
+        update_cache: yes
+
+    - apt:
+        name: '*'
+        state: latest
+
+    - apt_repository:
+        repo: ppa:gns3/ppa
+
+    - apt:
+        update_cache: yes
+        pkg: 
+          - gns3-server
+          - bridge-utils
+
+          - libvirt-daemon
+          - libvirt-daemon-system
+          - qemu-kvm
+          - qemu-system-x86
+          - qemu-tools
+          - virtinst
+
+    - user:
+        name: {{ ansible_user }}
+        append: yes
+        group: libvirt
+    
+    - shell: wget http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/openbsd-5.8.qcow2

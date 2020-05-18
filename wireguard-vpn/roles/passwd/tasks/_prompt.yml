@@ -1,0 +1,8 @@
+---
+
+- name: prompt for password when not found
+  pause:
+    prompt: "{{ prompt }}"
+    echo: no
+  register: prompt_pwd
+  no_log: true

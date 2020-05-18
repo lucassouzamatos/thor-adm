@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  api:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # volumes:
+    #   - ./ansible-config:/root/ansible-config

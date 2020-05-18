@@ -1,0 +1,26 @@
+---
+
+ansible_user: root
+
+kpxc_root_group: vultr/servers/{{ server_name }}
+pwd_hash_algo: bcrypt
+
+# 25Gb SSD +-
+erase_wait_minutes: 15
+
+# Ramdisk configuration
+auto_install_basedir: /root/auto_install
+bsdimg: "{{ auto_install_basedir }}/bsd.rd"
+bsdfs: "{{ auto_install_basedir }}/disk.fs"
+mntdir: "{{ auto_install_basedir }}/mnt/"
+vnd_dev: vnd0
+vndpath: "/dev/{{ vnd_dev }}a"
+bsd_rd_checksum: sha256:df6682bbf6699e94f4f2dc3c89c4ea49c491ce66ff67e28de36b6eba1a4666ef
+
+# default auto_install config
+domain: cdn.openbsd.org
+serverdir: pub/OpenBSD/6.6/amd64
+mirror: "https://{{ domain }}/{{ serverdir }}"
+
+next_groups: 
+  - child_bsds

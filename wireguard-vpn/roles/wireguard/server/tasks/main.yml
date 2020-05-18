@@ -1,0 +1,85 @@
+---
+
+- include_role:
+    name: wireguard/common
+
+- set_fact:
+    all_client_addresses: "{{ (client_addresses + more_clients) | unique }}"
+  vars:
+    more_clients: "{{ (additional_clients | default('')).split() }}"
+
+- block:
+  - include_role:
+      name: my_pub_cidr
+    vars:
+      cache_dir: "{{ cache_dir | default('.cache') }}" 
+      use_my_network: false
+
+  - set_fact:
+      all_client_addresses: "{{ all_client_addresses + [my_ip] | unique }}"
+  when: gather_my_ip | default(false) | bool
+
+- include_role:
+    name: wireguard/keyring
+  vars:
+    pubkeys: "{{ wg_basedir }}"
+    private: "{{ wg_basedir }}"
+    keys:
+      - pvt_file: "{{ local_pvt_file }}"
+        pub_file: "{{ local_pub_file }}"
+  tags:
+    - server-config
+
+- shell: cat "{{ wg_basedir }}/{{ local_pub_file }}"
+  register: local_pubkey_content
+
+- set_fact:
+    local_pubkey: "{{ local_pubkey_content.stdout }}"
+
+- include_role:
+    name: wireguard/keyring
+  vars:
+    keys:
+      - pvt_file: "{{ item }}"
+        pub_file: "{{ item }}"
+  with_items:
+    - "{{ all_client_addresses }}"
+
+- include_role:
+    name: wireguard/configure
+  vars:
+    pvt_file: "{{ local_pvt_file }}"
+
+- include_role:
+    name: wireguard/bundle
+
+- include_tasks: roles/wireguard/grab_interface.yml
+
+- name: ensure client addresses is white listed
+  lineinfile:
+    path: "{{ white_ips_file }}"
+    line: "{{ item }}"
+    create: yes
+    owner: root
+    group: wheel
+    mode: 0600
+  with_items:
+    - "{{ all_client_addresses }}"
+
+- debug:
+    msg: "Interface: {{ wg_if }}"
+
+- debug:  
+    msg: "Endpoint: {{ ansible_host }}:{{ wg_listen_port }}"
+
+- include_role:
+    name: pf
+
+- name: cleanup
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ client_cfg_dir }}"
+    - "{{ private }}"
+    - "{{ pubkeys }}"

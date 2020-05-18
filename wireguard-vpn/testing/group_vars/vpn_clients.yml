@@ -1,0 +1,5 @@
+---
+ansible_user: "{{ user.name }}"
+
+peer:
+  endpoint: 192.168.100.165:30702

@@ -1,0 +1,5 @@
+---
+
+# configuration
+conn: wg0
+conf_file: "{{ wg_basedir }}/{{ conn }}.conf"

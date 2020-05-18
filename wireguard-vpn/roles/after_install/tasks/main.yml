@@ -1,0 +1,109 @@
+---
+
+- name: define password for new user
+  include_role: 
+    role: passwd
+  vars:
+    login: "{{ user.name }}"
+    group: "{{ kpxc_user_group }}"
+    algo: "{{ pwd_hash_algo }}"
+    prompt: "User password:"
+    ansible_connection: local
+    ansible_become: no
+  
+- name: make sure python is installed
+  raw: pkg_add -z python-{{ py_version }}
+
+- name: check wheter fstab contains ssd changes
+  shell: grep 'rw,softdep,noatime' /etc/fstab
+  register: ssd_fstab
+  ignore_errors: yes
+
+- name: adjust ssd drive for better performance and security
+  replace: 
+    path: /etc/fstab
+    regexp: rw
+    replace: "rw,softdep,noatime"
+    backup: yes
+  when: ssd_fstab.rc != 0
+
+- name: make sure user exists
+  user:
+    name: "{{ user.name }}"
+    comment: "{{ user.name | capitalize() }}"
+    shell: "{{ user.shell }}"
+    password: "{{ input_password }}"
+    update_password: "{{ user.update_password }}"
+    generate_ssh_key: yes
+    ssh_key_type: "{{ user.ssh_key_type }}"
+
+- name: make sure local user is able to login
+  authorized_key:
+    user: "{{ user.name }}"
+    state: present
+    path: "{{ ssh.authorized_keys }}"
+    key: "{{ lookup('file', ssh.public_key) }}"
+    
+- name: sshd configuration file update
+  template: 
+    src: "{{ sshd_template.src }}"
+    dest: "{{ sshd_template.dest }}"
+    backup: "{{ sshd_template.backup }}"
+    owner: root
+    group: wheel
+    mode: 0640
+    validate: '/usr/sbin/sshd -T -f %s'
+
+- name: restart sshd
+  service: 
+    name: sshd 
+    state: restarted
+        
+- name: create doas configuration
+  template:
+    src: "{{ doas_template.src }}"
+    dest: "{{ doas_template.dest }}"
+    backup: "{{ doas_template.backup }}"
+    owner: root
+    group: wheel
+    mode: 0600
+    validate: '/usr/bin/doas -C %s'
+    
+- name: lock root user
+  user:
+    name: root
+    password: '*************'
+
+- name: update OpenBSD base system (can take lot of time)
+  shell: syspatch
+  register: bsd_updated
+
+- name: remove unecessary software
+  openbsd_pkg: 
+    name: "{{ removed_pkgs | join(' ') }}"
+    state: absent
+
+- name: disable and stop services
+  shell: rcctl disable {{ item }} ; rcctl stop {{ item }}
+  with_items:
+    - "{{ disabled_services }}"
+
+- name: rebooting machine after updates
+  reboot:
+    reboot_timeout: 0
+    msg: Ansible updates triggered
+  ignore_errors: yes
+  when: bsd_updated.changed or ssd_fstab.rc != 0
+
+- name: waiting for machine to get back (this make take some time...)
+  wait_for: 
+    host: "{{ ansible_host }}" 
+    port: "{{ ssh.port }}"
+    state: started
+    delay: 10
+    sleep: 5
+    connect_timeout: 60
+  become: false
+  connection: local
+  when: bsd_updated.changed or ssd_fstab.rc != 0
+

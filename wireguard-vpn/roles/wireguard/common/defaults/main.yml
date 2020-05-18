@@ -1,0 +1,4 @@
+---
+
+become_user_login: "{{ ansible_user }}"
+become_user_group: vultr/servers/{{ ansible_host }}/users

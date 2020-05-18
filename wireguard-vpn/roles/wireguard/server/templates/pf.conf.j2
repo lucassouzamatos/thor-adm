@@ -1,0 +1,88 @@
+# thanks to
+# https://networkfilter.blogspot.com/2017/04/be-your-own-vpn-provider-with-openbsd-v2.html#firewall
+
+# VARIABLES, MACRO, AND TABLES
+# ---------------------------------------------------------------------------------------
+all_networks="0.0.0.0/0"
+private_networks="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16"
+
+wg_if="{{ wg_if }}"
+wg_port="{{ wg_listen_port }}"
+
+# allowed ips to traverse tunnel
+wg_tun_in="{{ network }}.0/{{ cidr_netmask }}"
+wg_tun_out="{{ local_addr }}"
+
+{% set ssh_port_in_use = ansible_port | default(ssh.port) %}
+
+ssh_port="{{ ssh_port_in_use }}"
+ssh_ips="{{ ssh.allow_ips }}"
+
+{% set all_ports = [ssh_port_in_use, wg_listen_port | int, 65536] %}
+{% set _vars = {'bad_ports': [], 'last_port': 1} %}
+
+{% for port in all_ports | sort %}
+    {% set last_good_port = (port - 1) | string %}
+    {% if _vars.bad_ports.append(_vars.last_port | string + ':' + last_good_port) %} {% endif %}
+    {% if _vars.update({'last_port': port + 1}) %} {% endif %} 
+{% endfor %}
+
+bad_ports="{{ _vars.bad_ports | join(', ') }}"
+
+table <wg_white_ips> persist file "{{ white_ips_file }}"
+table <internet> const { $all_networks, !self, !$private_networks }
+table <bruteforce> persist
+table <badguys> persist
+
+# GLOBAL POLICY
+# ---------------------------------------------------------------------------------------
+set block-policy drop
+set state-policy if-bound
+set loginterface egress
+set skip on lo
+set optimization conservative
+
+block log all
+
+match in all scrub (no-df max-mss 1440 random-id)
+block in log quick from <bruteforce> label "bruteforce"
+block in log quick from <badguys> label "old_guys"
+
+# DEFAULT TRAFFIC TAGGING
+# --------------------------------------------------------------------------------
+match in on egress proto { tcp udp } from <internet> to egress port { $bad_ports }                  tag BAD_GUYS
+match in on egress from { no-route urpf-failed } to any                                             tag BAD_PACKET
+match out on egress from any to no-route                                                            tag BAD_PACKET
+
+match in on $wg_if inet proto icmp from $wg_tun_in to $wg_tun_out icmp-type { echoreq unreach }     tag WG_TUN_ICMP
+match in on $wg_if proto { tcp udp } from $wg_tun_in to $wg_tun_out                                 tag WG_TUN_IN
+match in on egress proto udp from <wg_white_ips> to egress port $wg_port                            tag WG_EGRESS_IN
+
+match in on egress proto tcp from { $ssh_ips } to egress port $ssh_port                             tag SSH_IN
+
+# POLICY ENFORCEMENT
+# ---------------------------------------------------------------------------------------
+match in tagged WG_EGRESS_IN set tos lowdelay set prio 6
+match in tagged WG_TUN_IN set tos lowdelay set prio 5
+
+# Blocking spoofed or malformed packets, IPv6, and some bad traffic
+antispoof log quick for { lo egress $wg_if } label "antispoof"
+block quick log tagged BAD_PACKET label "noroute_urpf"
+block quick log tagged BAD_GUYS label "new_guy"
+
+# Standard rules
+# protect SSH from SYN flood and bruteforce
+pass in quick tagged SSH_IN synproxy state \
+    (max-src-conn-rate 6/4, overload <bruteforce> flush global)
+
+# pass wireguard incomming
+pass in quick log tagged WG_EGRESS_IN keep state \
+    (max-src-conn-rate 6/4, overload <bruteforce> flush global)
+
+# pass tunneled traffic
+pass in quick log tagged WG_TUN_IN modulate state \
+    (max-src-conn 20, max-src-conn-rate 8/4, overload <bruteforce> flush global)
+
+# pass icmp traffic
+pass in quick log tagged WG_TUN_ICMP keep state \
+    (max-src-conn-rate 6/4, overload <bruteforce> flush global)

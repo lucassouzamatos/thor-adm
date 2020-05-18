@@ -1,0 +1,18 @@
+---
+
+- block:
+  - include_role: 
+      name: passwd
+    vars:
+      login: "{{ become_user_login }}"
+      group: "{{ become_user_group }}"
+      algo: "plain-text"
+      prompt: "SSH password:"
+      ansible_connection: local
+  
+  - set_fact:
+      ansible_become_pass: "{{ input_password }}"
+  when: ansible_become | default(false) | bool 
+
+- name: setup
+  setup:

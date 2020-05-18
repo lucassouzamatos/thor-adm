@@ -1,0 +1,25 @@
+---
+
+- setup:
+    gather_subset: 
+      - network
+      - hardware
+
+- include_tasks: disk_erase.yml
+  tags:
+    - disk-erase
+  
+- include_tasks: extract_conf.yml
+  tags:
+    - extract-config
+
+- name: ensure server is on next in-memory inventory
+  add_host: 
+    host: "{{ server_ip | default(ansible_host) }}"
+    groups: "{{ next_groups }}"
+
+- include_tasks: roles/common/tasks/ssh/rescan.yml
+  vars:
+    ip_addr: "{{ ansible_host }}"
+    ansible_connection: local
+    ansible_become: no

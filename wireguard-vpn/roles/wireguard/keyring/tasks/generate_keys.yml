@@ -1,0 +1,34 @@
+---
+
+- name: define some variables
+  set_fact:
+    private_key: "{{ private }}/{{ outer_item.pvt_file }}"
+    public_key: "{{ pubkeys }}/{{ outer_item.pub_file }}"
+
+- name: check private key existance
+  stat:
+    path: "{{ private_key }}"
+  register: pvt_key_st
+
+- name: create private key
+  shell: umask 077 ; wg genkey > {{ private_key }}
+  register: gen_pvt_key
+  when: not pvt_key_st.stat.exists
+  no_log: true
+
+- name: create public key
+  shell: wg pubkey < {{ private_key }} > {{ public_key }}
+  register: gen_pub_key
+  when: not pvt_key_st.stat.exists
+
+- name: always fix keys permissions
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    group: wheel
+    mode: "{{ item.mode }}"
+  with_items:
+    - path: "{{ private_key }}"
+      mode: '0400'
+    - path: "{{ public_key }}"
+      mode: '0444'

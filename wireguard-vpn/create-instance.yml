@@ -1,0 +1,19 @@
+---
+
+- hosts: localhost
+  roles: 
+    - role: server
+      tags:
+        - server
+
+- hosts: new_bsds
+  roles:
+    - role: auto_install
+      tags:
+        - auto-install
+
+- hosts: child_bsds
+  roles:
+    - role: after_install
+      tags:
+        - after-install

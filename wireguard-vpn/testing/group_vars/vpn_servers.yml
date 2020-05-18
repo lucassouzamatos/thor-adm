@@ -1,0 +1,8 @@
+---
+ansible_user: "{{ user.name }}"
+ansible_become: yes
+
+network: 10.100.200
+local_addr: "{{ network }}.1"
+
+client_cfg_dir: "{{ wg_basedir }}/configs"

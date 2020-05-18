@@ -1,0 +1,24 @@
+---
+
+- import_playbook: create-instance.yml
+
+- hosts: localhost
+  tasks:
+    - name: define control variable for wireguard run
+      set_fact:
+        is_client: "{{ client | default(false) | bool }}"
+
+    - set_fact:
+        wg_groups:
+          - vpn_{{ is_client | ternary('clients', 'servers') }}
+
+    - name: ensure server is on next wireguard in-memory inventory
+      add_host: 
+        host: "{{ server_ip | default(ansible_host) }}"
+        groups: "{{ wg_groups }}"
+
+- import_playbook: wireguard-client.yml
+  when: client | default(false) | bool
+
+- import_playbook: wireguard-server.yml
+  when: not (client | default(false) | bool)

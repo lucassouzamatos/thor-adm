@@ -1,0 +1,24 @@
+#!/bin/ksh
+
+daemon="/usr/local/bin/wg-quick"
+daemon_flags={{ conn }}
+
+. /etc/rc.d/rc.subr
+
+rc_bg=NO
+rc_reload=NO
+pexp=wireguard-go
+
+rc_check() {
+    pgrep -q "${pexp}"
+}
+
+rc_start() {
+    ${rcexec} "${daemon} up ${daemon_flags}"
+}
+
+rc_stop() {
+    ${daemon} down ${daemon_flags}
+}
+
+rc_cmd $1

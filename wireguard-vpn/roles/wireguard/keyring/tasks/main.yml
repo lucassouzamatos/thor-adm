@@ -1,0 +1,6 @@
+---
+
+- include_tasks: generate_keys.yml
+  loop_control:
+    loop_var: outer_item
+  loop: "{{ keys | mandatory }}"

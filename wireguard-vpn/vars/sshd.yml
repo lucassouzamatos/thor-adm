@@ -1,0 +1,9 @@
+---
+default_ssh_authorized_keys_path: /etc/ssh/authorized_keys/
+
+ssh:
+  authorized_keys: "{{ default_ssh_authorized_keys_path }}{{ user.name }}"
+  public_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_' + user.ssh_key_type + '.pub') }}"
+  port: 22
+  listen_addr: 0.0.0.0
+  allow_ips: '192.168.100.1'

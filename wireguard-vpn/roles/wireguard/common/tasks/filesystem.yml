@@ -1,0 +1,22 @@
+---
+
+- name: delete base directory when asked
+  file:
+    path: "{{ wg_basedir }}"
+    state: absent
+  tags:
+    - never
+    - del-wg_basedir
+
+- name: create wireguard directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "{{ item.mode | default('0700') }}"
+  with_items:
+    - path: "{{ wg_basedir }}"
+    - path: "{{ private }}"
+    - path: "{{ pubkeys }}"
+      mode: '0750'

@@ -1,0 +1,23 @@
+---
+
+- name: define ssh control variable
+  set_fact:
+    key_exists: no
+  
+- include_tasks: roles/common/tasks/ssh/_try_key_type.yml  
+  with_items:
+    - ed25519
+    - ecdsa
+    - rsa
+    - dsa
+
+- stat:
+    path: "{{ ssh_pubkey }}"
+  register: sshkey_st
+
+- fail:
+    msg: Any ssh key could be found. Please specify one with [ssh_pubkey] variable.
+  when: not sshkey_st.stat.exists
+
+- debug:
+    msg: "Discovered ssh public key: {{ ssh_pubkey }}"
