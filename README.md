@@ -45,14 +45,28 @@ Coisas que não funcionaram bem comigo:
 ### Ambiente de Deploy
 - no diretório `instances` contém um Dockerfile que cria uma imagem com o ansible e o cliente ssh. Então para criar a imagem:
 ```bash
-$ docker build -t instances
+$ docker build instances/
 ```
+
+- configurar as variáveis de ambiente da amazon, usando o arquivo [aws.env.example](instances/aws.env.example) como base. Então copiamos este para `aws.env` (automaticamente ignorado pelo git, assim espero) e o configuramos adequadamente. No final terá algo assim:
+```bash
+$ cat instances/aws.env
+# Store your access keys, and pass it to docker with --env-file
+
+AWS_ACCESS_KEY_ID=6bb1f81d42c1cd7ad1ee3536029e
+AWS_ACCESS_SECRET_KEY=n40Rk8gUHjDchQ70ncHpMMST97c7NiN6w21U9YiirPjR3TwDKhik9Qk+Ho
+AWS_DEFAULT_REGION=sa-east-1
+```
+
 - para nosso propósito, precisaremos de dois volumes sendo:
     - um volume `somente-leitura` tendo os arquivos do ansible
     - um volume para transferirmos as chaves da vpn para o host
 o nome dos volumes criados na imagem docker é irrelevante, porém é aconselhado seguir o padrão:
+
+**OBS**: adaptar `/caminho-diretório/instances` para o seu ambiente, tomando o cuidade de que seja um caminho absoluto. No windows deve ser algo como `C:\...`
+
 ```bash
-$ docker run --rm -it -v ./instances/ansible:/instances:ro -v ./instances/vpnkeys:/vpnkeys ${IMAGE_ID}
+$ docker run --rm -it --env-file aws.env -v /caminho-diretório/instances/ansible:/instances:ro -v /caminho-diretório/instances/vpnkeys:/vpnkeys ${IMAGE_ID}
 bash-5.0# echo Alpine rocks!!!
 ```
 
