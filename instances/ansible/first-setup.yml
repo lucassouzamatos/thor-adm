@@ -14,6 +14,9 @@
     volume_size: "8"
     inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
     # ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
+    cache_dir: /.my_pub_cidr_cache
+    use_my_network: true
+  
   tasks:
     # gather ubuntu image id 
     - block:
@@ -29,6 +32,9 @@
     
     # gather security group id
     - block:
+        - include_role:
+            name: my_pub_cidr
+
         - ec2_group:
             name: ssh-hole
             description: Default SSH rules for home connection
