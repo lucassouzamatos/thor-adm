@@ -15,9 +15,10 @@
             "Action": "ec2:RunInstances",
             "Resource": [
                 "arn:aws:ec2:*::image/{{ image_id }}",
-                "arn:aws:ec2:*::key-pair/{{ key_id }}",
+                "arn:aws:ec2:*:*:key-pair/{{ key_id }}",
                 "arn:aws:ec2:*:*:security-group/{{ sg_id }}",
-                "arn:aws:ec2:*:*:subnet/{{ subnet_id }}"
+                "arn:aws:ec2:*:*:subnet/{{ subnet_id }}",
+                "arn:aws:ec2:*:*:network-interface/*"
             ]
         },
         {
