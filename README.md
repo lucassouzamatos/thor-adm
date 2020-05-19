@@ -39,6 +39,30 @@ Coisas que não funcionaram bem comigo:
 
 
 # Instâncias
+
+## Ansible - Inicializando
+Nesta fase serão criadas as permissões para a criação das intâncias, com segurança. Devido ao ótimo mecanismo de gerenciamento de permissões de acesso (IAM) é possível limitar a responsabilidade de cada usuário, minimizando os danos no caso de um incidente de invasão.
+
+Após essa fase dois usuário serão criados. O primeiro usuário, criado pelo console da amazon (navegador), responsável por criar o outro usuário e configurar as suas permissões. Este último usuário terá a responsabilidade de criar instâncias `free-tier`s na amazon. 
+
+O primeiro será chamado de `setup-manager`, mas não é necessário usar o mesmo nome; e o último está sendo chamado de `ubuntu-sim-deployer`, este está `hard-coded` nos arquivos, sendo que **para alterá-lo terá que alterar também nas dependências. Você foi avisado!**.
+
+#### setup-manager
+**Todos os passos serão executados no console da amazon.**
+
+- IAM > Policies > Create Policy
+    - mude para a aba `JSON` e troque o conteúdo com o conteúdo de [first-setup-policy](instances/ansible/policies/first-setup-policy.json)
+    - o nome da policy será `IAMFirstSetupManager`
+    - finalize o cadastro
+
+- IAM > Users > Add User
+    - o nome do usuário, como mencionado anteriormente será `setup-manager`
+    - no tipo de acesso, habilite apenas accesso por chaves, `Programmatic access`
+    - vá para a área de permissões, selecione a seção para acrescentar policies existentes diretamente, e procure pela policy criada anteriormente, no caso `IAMFirstSetupManager`
+    - finalize o cadastro
+
+Com o usuário criado e permissões setadas, podemos dar início a configuração inicial.
+
 ## Docker
 **Não entrarei em detalhes sobre configuração/instalação do docker em diferentes plataformas, logo assumirei que este já esteja em perfeito funcionamento.**
 
@@ -48,7 +72,7 @@ Coisas que não funcionaram bem comigo:
 $ docker build instances/
 ```
 
-- configurar as variáveis de ambiente da amazon, usando o arquivo [aws.env.example](instances/aws.env.example) como base. Então copiamos este para `aws.env` (automaticamente ignorado pelo git, assim espero) e o configuramos adequadamente. No final terá algo assim:
+- configurar as variáveis de ambiente da amazon, usando o arquivo [aws.env.example](instances/aws.env.example) como base. Então copiamos este para `aws.env` (automaticamente ignorado pelo git, assim espero) e o configuramos com as credenciais do usuário `setup-manager`, criado anteriormente. No final terá algo assim:
 ```bash
 $ cat instances/aws.env
 # Store your access keys, and pass it to docker with --env-file
@@ -71,3 +95,20 @@ bash-5.0# echo Alpine rocks!!!
 ```
 
 Ao final do comando `docker run ...` devemos cair direto no bash da imagem.
+
+### Testando o ambiente
+Com o bash aberto no container, você deve estar apto a usar tanto o `ansible` quanto  `awscli`. Para ter certeza, execute estes testes:
+
+- ansible:
+```bash
+bash-5.0# ansible-playbook instances/my-cidr.yml  
+```
+
+Ao final deve mostrar a rede do endereço IP público.
+
+- awscli:
+```bash
+bash-5.0# awscli iam list-users
+```
+
+Deve listar todos os usuários pertencentes a conta. 
