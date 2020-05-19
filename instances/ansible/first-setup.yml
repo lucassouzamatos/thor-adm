@@ -1,0 +1,104 @@
+---
+
+# This module configures basic management stuff.
+# It needs an user with custom IAM policy, some of them are:
+# - CreateKeyPair : allows the creation of the SSH keys locally and assining it 
+# to amazon key-pair, thus we can specify these keys to connect to newly instances.
+# - CreateSecurityGroups : allow use open communication to instances from our IP block.
+#
+# Because of that, you may create a special user to execute such operations. We already provide
+# an IAM policy that handles all of this.
+
+- hosts: localhost
+  vars:
+    volume_size: "8"
+    inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
+    # ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
+  tasks:
+    # gather ubuntu image id 
+    - block:
+        - ec2_ami_info:
+            filters:
+              owner-id: 099720109477  # public available images
+              name: 'ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*'
+          register: ami_ubuntu
+
+        - set_fact: 
+            image_id: "{{ ami_ubuntu.images[0].image_id }}"
+      when: image_id is not defined
+    
+    # gather security group id
+    - block:
+        - ec2_group:
+            name: ssh-hole
+            description: Default SSH rules for home connection
+            rules:
+              - proto: tcp
+                ports: 22
+                cidr_ip: "{{ my_cidr }}"
+          register: sg_ssh
+
+        - set_fact:
+            sg_id: "{{ sg_ssh.group_id }}"
+      when: sg_id is not defined
+
+    # gather vpc subnet id, there is no need to create a custom subnet network by now, so
+    # just get a random one
+    - block:
+        - ec2_vpc_subnet_info:
+          register: vpc_subnets
+
+        - set_fact:
+            subnet_id: "{{ (vpc_subnets.subnets | shuffle)[0].subnet_id }}"
+      when: subnet_id is not defined
+    
+    # generate a new ssh key when needed
+    - block:
+        - set_fact:
+            ssh_private_key: "{{ '/'.join([keys_dir, 'id_rsa']) }}"
+        
+        - stat:
+            path: "{{ ssh_private_key + '.pub' }}" 
+          register: gen_ssh_key_stat
+
+        # only create a new ssh key when one is missing
+        - openssh_keypair:
+            path: "{{ ssh_private_key }}"
+          when: not gen_ssh_key_stat.stat.exists
+
+        - set_fact:
+            ssh_pubkey: "{{ lookup('file', ssh_private_key + '.pub') }}"
+      when: ssh_pubkey is not defined
+      vars:
+        - keys_dir: /vpnkeys
+
+    # gather key pair id
+    - block:
+      - ec2_key:
+          name: home-conn-ssh-pubkey
+          key_material: "{{ ssh_pubkey }}"
+          force: false
+        register: ec2_key_pair
+      
+      # ansible does not provider any direct method to get key_id
+      # so we get it by another way 
+      - shell: aws ec2 describe-key-pairs --filters "Name=fingerprint,Values={{ ec2_key_pair.key.fingerprint }}" --query "KeyPairs[0].KeyPairId"
+        register: ec2_key_pair_proc
+
+      - set_fact:
+          # get output removing double-quotes on string
+          key_id: "{{ ec2_key_pair_proc.stdout.strip('\"') }}"
+
+    - name: create deployer user with defined instance permissions
+      iam_managed_policy:
+        policy_name: EC2UbuntuFreeTierDeployer
+        policy_description: Allows user to deploy free-tier ubuntu instances
+        policy: "{{ lookup('template', 'policies/ubuntu-free-tier.json.j2') }}"
+      register: ec2_deployer_policy
+    
+    - name: create deployer user assigned to created group
+      iam_user:
+        name: ubuntu-sim-deployer
+        state: present
+        managed_policy:
+          - "{{ ec2_deployer_policy.policy.arn }}"

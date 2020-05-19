@@ -15,6 +15,7 @@
             "Action": "ec2:RunInstances",
             "Resource": [
                 "arn:aws:ec2:*::image/{{ image_id }}",
+                "arn:aws:ec2:*::key-pair/{{ key_id }}",
                 "arn:aws:ec2:*:*:security-group/{{ sg_id }}",
                 "arn:aws:ec2:*:*:subnet/{{ subnet_id }}"
             ]
@@ -41,7 +42,10 @@
             "Condition": {
                 "StringEquals": {
                     "ec2:InstanceType": "t2.micro",
-                    "ec2:Region": "{{ inst_region }}"
+                    "ec2:Region": "{{ inst_region }}",
+                },
+                "IpAddress": {
+                    "aws:SourceIp": "{{ my_cidr }}"
                 }
             }
         }

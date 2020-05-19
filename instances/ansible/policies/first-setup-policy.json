@@ -2,16 +2,31 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowsCreateBasicHighPriorityStuff",
+            "Sid": "ManagesUserPolicyAndTheirProperties",
             "Effect": "Allow",
             "Action": [
-                "ec2:DescribeImages",
-                "ec2:DescribeVpcs",
-                "ec2:CreateKeyPair",
-                "ec2:CreateSecurityGroup",
-                "ec2:DescribeSubnets",
-                "ec2:DescribeKeyPairs",
-                "ec2:DescribeSecurityGroups"
+                "iam:CreateUser",
+                "iam:GetUser",
+                "iam:CreatePolicy",
+                "iam:GetPolicy",
+                "iam:CreatePolicyVersion",
+                "iam:GetPolicyVersion",
+                "iam:SetDefaultPolicyVersion",
+                "iam:ListAttachedUserPolicies",
+                "iam:AttachUserPolicy"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:user/ubuntu-sim-deployer",
+                "arn:aws:iam::*:policy/EC2UbuntuFreeTierDeployer"
+            ]
+        },
+        {
+            "Sid": "ListUsersAndPolicies",
+            "Effect": "Allow",
+            "Action": [
+                "iam:ListUsers",
+                "iam:ListPolicies",
+                "iam:ListPolicyVersions"
             ],
             "Resource": "*"
         }
