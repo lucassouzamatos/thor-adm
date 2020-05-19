@@ -1,11 +1,10 @@
 FROM alpine:edge
 USER root
-RUN apk --update add python3 py3-pip openssh-client bash \
- && mkdir ~/.ssh \
- && chmod 700 ~/.ssh \
- && touch ~/.ssh/id_rsa \
- && chmod u=r,g=,o= ~/.ssh/id_rsa \
- && echo -e "Host *" > ~/.ssh/config \
- && echo -e "  StrictHostKeyChecking no" >> ~/.ssh/config \
- && echo -e "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config \
- && echo -e "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+
+# VOLUME instances:ro vpnkeys
+
+RUN apk --update add bash gcc musl-dev python3-dev libffi-dev openssl-dev py3-pip openssh-client
+
+RUN pip3 install ansible -U
+
+ENTRYPOINT ["/bin/bash"]

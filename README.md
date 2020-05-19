@@ -36,3 +36,24 @@ Inicialmente fiz vários testes usando um simulador dessas regras, que a princí
 Coisas que não funcionaram bem comigo:
 - simulador de policies, não vale a pena o tempo perdido, melhor testar com `awscli` usando a opção `--dry-run` então ele nunca vai realmente criar uma instância
 - criador de policies, escrever a policy direto no json foi mais intuitivo e foi como fiz funcionar, mas tentaria novamente usa-lo
+
+
+# Instâncias
+## Docker
+**Não entrarei em detalhes sobre configuração/instalação do docker em diferentes plataformas, logo assumirei que este já esteja em perfeito funcionamento.**
+
+### Ambiente de Deploy
+- no diretório `instances` contém um Dockerfile que cria uma imagem com o ansible e o cliente ssh. Então para criar a imagem:
+```bash
+$ docker build -t instances
+```
+- para nosso propósito, precisaremos de dois volumes sendo:
+    - um volume `somente-leitura` tendo os arquivos do ansible
+    - um volume para transferirmos as chaves da vpn para o host
+o nome dos volumes criados na imagem docker é irrelevante, porém é aconselhado seguir o padrão:
+```bash
+$ docker run --rm -it -v ./instances/ansible:/instances:ro -v ./instances/vpnkeys:/vpnkeys ${IMAGE_ID}
+bash-5.0# echo Alpine rocks!!!
+```
+
+Ao final do comando `docker run ...` devemos cair direto no bash da imagem.
