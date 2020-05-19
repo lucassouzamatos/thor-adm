@@ -1,0 +1,9 @@
+---
+
+ip_provider: https://icanhazip.com
+whois_provider: https://rdap.arin.net/bootstrap/ip
+
+net_cache_file: networks.json
+net_cache_path: "{{ cache_dir }}/{{ net_cache_file }}"
+
+use_my_network: false

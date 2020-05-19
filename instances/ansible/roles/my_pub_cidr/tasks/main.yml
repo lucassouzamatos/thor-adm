@@ -1,0 +1,53 @@
+---
+
+- name: looking up for your ip address
+  set_fact:
+    my_ip: "{{ lookup('url', ip_provider) }}"
+
+- name: discover ip version
+  set_fact:
+    my_ip_version: "{{ (':' in my_ip) | ternary('v6', 'v4') }}"
+
+- name: discover ip netmask from version
+  set_fact:
+    my_mask: "{{ (my_ip_version == 'v6') | ternary('64', '32') }}"
+
+- block:  
+  - name: define a network of discovered ip address
+    set_fact:
+      my_cidr: "{{ my_ip }}/{{ my_mask }}"
+  when: not use_my_network | bool
+
+- block:
+  - name: check wheter the network cache exists
+    stat:
+      path: "{{ net_cache_path }}"
+    register: net_cache_st
+
+  - block:
+    - name: ensure network file exists
+      file:
+        path: "{{ net_cache_path }}" 
+        state: touch
+        mode: 0664
+
+    - name: fill network cache with empty data
+      copy:
+        dest: "{{ net_cache_path }}"
+        content: "[]"
+    when: not net_cache_st.stat.exists
+
+  - name: get network cache content
+    set_fact:
+      net_cache_content: "{{ lookup('file', net_cache_path) | from_json }}"
+
+  - name: try cached network resolution
+    set_fact:
+      my_cidr: "{{ cached_dict_items[my_ip] | default('')  }}" 
+    vars:
+      cached_dict_items: "{{ net_cache_content | items2dict(key_name='ip', value_name='cidr') }}"
+
+  - name: make a whois search when cidr not in cache
+    include_tasks: whois_search.yml
+    when: my_cidr == ""
+  when: use_my_network | bool
