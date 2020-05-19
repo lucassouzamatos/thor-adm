@@ -1,0 +1,55 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowsBasicListAndCreatDefaultObjects",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeImages",
+                "ec2:DescribeInstances",
+                "ec2:DescribeVpcs",
+                "ec2:CreateKeyPair",
+                "ec2:CreateSecurityGroup",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeKeyPairs",
+                "ec2:DescribeSecurityGroups"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowsPredefinedUbuntuImageAndVPCNetIf",
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": [
+                "arn:aws:ec2:sa-east-1::image/ami-001c16a3a4f5d85f1",
+                "arn:aws:ec2:sa-east-1:*:security-group/sg-d2bfbead",
+                "arn:aws:ec2:sa-east-1:*:subnet/subnet-5c1d993a"
+            ]
+        },
+        {
+            "Sid": "AllowsMinimalGeneralPurposeSSDVolume",
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": "arn:aws:ec2:sa-east-1:*:volume/*",
+            "Condition": {
+                "NumericEquals": {
+                    "ec2:VolumeSize": "8"
+                },
+                "StringEquals": {
+                    "ec2:VolumeType": "gp2"
+                }
+            }
+        },
+        {
+            "Sid": "AllowsFreeTierIntanceType",
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": "arn:aws:ec2:sa-east-1:*:instance/*",
+            "Condition": {
+                "StringEquals": {
+                    "ec2:InstanceType": "t2.micro"
+                }
+            }
+        }
+    ]
+}
