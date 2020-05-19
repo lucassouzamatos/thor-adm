@@ -51,12 +51,22 @@
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
     # just get a random one
     - block:
-        - ec2_vpc_subnet_info:
-          register: vpc_subnets
-
+        # SaoPaulo region sa-east-1b does not support t2.micro instances
         - set_fact:
-            subnet_id: "{{ (vpc_subnets.subnets | shuffle)[0].subnet_id }}"
+            subnet_id: "{{ ['sa-east-1a', 'sa-east-1c'] | shuffle | first }}"
+          when: is_sp_region
+        
+        - block:
+          - ec2_vpc_subnet_info:
+              register: vpc_subnets
+
+          - set_fact:
+              subnet_id: "{{ (vpc_subnets.subnets | shuffle | first).subnet_id }}"
+          when: not is_sp_region
+
       when: subnet_id is not defined
+      vars: 
+        is_sp_region: "{{ inst_region == 'sa-east-1' }}" 
     
     # generate a new ssh key when needed
     - block:
