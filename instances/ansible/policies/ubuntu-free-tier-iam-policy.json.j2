@@ -1,0 +1,49 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowsListCreatedInstances",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInstances"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowsPredefinedImagesAndNetworking",
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": [
+                "arn:aws:ec2:*::image/{{ image_id }}",
+                "arn:aws:ec2:*:*:security-group/{{ sg_id }}",
+                "arn:aws:ec2:*:*:subnet/{{ subnet_id }}"
+            ]
+        },
+        {
+            "Sid": "AllowsMinimalGeneralPurposeSSDVolume",
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": "arn:aws:ec2:*:*:volume/*",
+            "Condition": {
+                "NumericEquals": {
+                    "ec2:VolumeSize": "{{ volume_size }}"
+                },
+                "StringEquals": {
+                    "ec2:VolumeType": "gp2"
+                }
+            }
+        },
+        {
+            "Sid": "AllowsFreeTierIntanceTypeInPredefinedRegion",
+            "Effect": "Allow",
+            "Action": "ec2:RunInstances",
+            "Resource": "arn:aws:ec2:*:*:instance/*",
+            "Condition": {
+                "StringEquals": {
+                    "ec2:InstanceType": "t2.micro",
+                    "ec2:Region": "{{ inst_region }}"
+                }
+            }
+        }
+    ]
+}
