@@ -78,22 +78,16 @@
       vars:
         - keys_dir: /vpnkeys
 
-    # gather key pair id
+    # gather key pair id, which is the key name
     - block:
       - ec2_key:
-          name: home-conn-ssh-pubkey
+          name: home-conn-ssh-pubkey-{{ 99999 | random(start=1, step=5) }}
           key_material: "{{ ssh_pubkey }}"
           force: false
         register: ec2_key_pair
-      
-      # ansible does not provider any direct method to get key_id
-      # so we get it by another way 
-      - shell: aws ec2 describe-key-pairs --filters "Name=fingerprint,Values={{ ec2_key_pair.key.fingerprint }}" --query "KeyPairs[0].KeyPairId"
-        register: ec2_key_pair_proc
-
+  
       - set_fact:
-          # get output removing double-quotes on string
-          key_id: "{{ ec2_key_pair_proc.stdout.strip('\"') }}"
+          key_id: "{{ ec2_key_pair.key.name }}"
 
     - name: create deployer user with defined instance permissions
       iam_managed_policy:
