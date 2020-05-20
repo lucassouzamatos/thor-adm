@@ -108,7 +108,7 @@ Ao final deve mostrar a rede do endereço IP público.
 
 - awscli:
 ```bash
-bash-5.0# awscli iam list-users
+bash-5.0# aws iam list-users
 ```
 
 Deve listar todos os usuários pertencentes a conta. 
