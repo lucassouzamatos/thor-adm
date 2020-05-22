@@ -15,6 +15,7 @@
                 "ec2:DescribeKeyPairs",
                 "ec2:DeleteKeyPair",
                 "ec2:DescribeSecurityGroups",
+                "ec2:DeleteSecurityGroup",
                 "ec2:DescribeInstanceStatus"
             ],
             "Resource": "*",
