@@ -62,7 +62,7 @@
         inst_ssh_pubkeys: "{{ inst_console_log.stdout_lines[1:-1] }}"
       blockinfile:
         path: "{{ (default_ssh_dir | default('~/.ssh')) | expanduser }}/known_hosts"
-        mode: '644'
+        mode: 0644
         create: yes
         block: | 
           {% for key in inst_ssh_pubkeys -%}
