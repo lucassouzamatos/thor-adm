@@ -60,7 +60,7 @@
               register: sg_ssh
             
             - set_fact:
-                sg_id: 
+                sg_ids:
                   - "{{ sg_vpn.group_id }}"
                   - "{{ sg_ssh.group_id }}"
           when: is_vpn_operator
@@ -76,10 +76,10 @@
               register: sg_ssh
             
             - set_fact:
-                sg_id:
+                sg_ids:
                   - "{{ sg_ssh.group_id }}"
           when: not is_vpn_operator
-      when: sg_id is not defined
+      when: sg_idsis not defined
 
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
     # just get a random one
@@ -166,7 +166,7 @@
             ---
             image_id: {{ image_id }}
             key_id: {{ key_id }}
-            sg_id:
+            sg_ids:
               {{ sg_ids | to_nice_yaml }}
             subnet_id: {{ subnet_id }}
             volume_size: {{ volume_size }}
