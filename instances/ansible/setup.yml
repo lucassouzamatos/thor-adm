@@ -1,0 +1,12 @@
+---
+
+- hosts: localhost
+  
+- import_playbook: first-setup.yml
+  tags:
+    - first-setup
+  
+- import_playbook: vpn-border.yml
+  when: is_vpn_operator
+  tags:
+    - vpn-border
