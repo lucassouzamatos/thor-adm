@@ -2,52 +2,71 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "ManagesUserPolicyAndTheirProperties",
+            "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
-                "iam:CreateUser",
-                "iam:GetUser",
-                "iam:CreatePolicy",
-                "iam:GetPolicy",
-                "iam:CreatePolicyVersion",
-                "iam:GetPolicyVersion",
-                "iam:SetDefaultPolicyVersion",
-                "iam:ListAttachedUserPolicies",
-                "iam:AttachUserPolicy"
+                "ec2:AuthorizeSecurityGroupEgress",
+                "ec2:AuthorizeSecurityGroupIngress"
             ],
-            "Resource": [
-                "arn:aws:iam::*:user/ubuntu-sim-deployer",
-                "arn:aws:iam::*:policy/EC2UbuntuFreeTierDeployer"
-            ]
+            "Resource": "*",
+            "Condition": {
+                "IpAddress": {
+                    "aws:SourceIp": "YOUR_PUBLIC_IP"
+                }
+            }
         },
         {
-            "Sid": "ManageInstanceProperties",
+            "Sid": "VisualEditor1",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreatePolicy",
+                "iam:GetPolicyVersion",
+                "iam:GetPolicy",
+                "iam:ListAttachedUserPolicies",
+                "iam:AttachUserPolicy",
+                "iam:GetUser",
+                "iam:CreatePolicyVersion",
+                "iam:CreateUser",
+                "iam:SetDefaultPolicyVersion"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:policy/EC2UbuntuFreeTierDeployer",
+                "arn:aws:iam::*:user/ubuntu-sim-deployer"
+            ],
+            "Condition": {
+                "IpAddress": {
+                    "aws:SourceIp": "YOUR_PUBLIC_IP"
+                }
+            }
+        },
+        {
+            "Sid": "VisualEditor2",
+            "Effect": "Allow",
+            "Action": [
+                "iam:ListPolicies",
+                "iam:ListPolicyVersions",
+                "iam:ListUsers"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "VisualEditor3",
             "Effect": "Allow",
             "Action": [
                 "ec2:DescribeImages",
-                "ec2:DescribeVpcs",
                 "ec2:ImportKeyPair",
+                "ec2:DescribeVpcs",
                 "ec2:CreateSecurityGroup",
                 "ec2:DescribeSubnets",
                 "ec2:DescribeKeyPairs",
-                "ec2:DescribeSecurityGroups",
-                "ec2:AuthorizeSecurityGroupIngress",
-                "ec2:AuthorizeSecurityGroupEgress"
+                "ec2:DescribeSecurityGroups"
             ],
-            "Resource": [
-                "arn:aws:iam::*:user/ubuntu-sim-deployer",
-                "arn:aws:iam::*:policy/EC2UbuntuFreeTierDeployer"
-            ]
-        },
-        {
-            "Sid": "ListUsersAndPolicies",
-            "Effect": "Allow",
-            "Action": [
-                "iam:ListUsers",
-                "iam:ListPolicies",
-                "iam:ListPolicyVersions"
-            ],
-            "Resource": "*"
+            "Resource": "*",
+            "Condition": {
+                "IpAddress": {
+                    "aws:SourceIp": "YOUR_PUBLIC_IP"
+                }
+            }
         }
     ]
 }
