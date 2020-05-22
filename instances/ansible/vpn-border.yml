@@ -8,6 +8,7 @@
     - block:
         - name: create the network interface with an elastic ip
           ec2_eni:
+            security_groups: "{{ sg_ids | first }}"
             subnet_id: "{{ subnet_id }}"
             description: VPN server interface of the border of the network
           register: eni_netif
