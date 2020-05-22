@@ -1,0 +1,9 @@
+---
+
+# subnet_id: subnet-6e951735
+# key_id: test-keypair
+# image_id: ami-001c16a3a4f5d85f1
+# default_ssh_dir: ~/.new_ssh
+# netif_id: eni-09c55d6d885354a52
+# instance_id: i-0c333beeb40dc7e2b
+# instance_state: running

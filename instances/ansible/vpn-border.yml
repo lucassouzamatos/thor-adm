@@ -1,0 +1,64 @@
+---
+
+- hosts: localhost
+  tasks:
+    - block:
+        - name: create the network interface with an elastic ip
+          ec2_eni:
+            subnet_id: "{{ subnet_id }}"
+            description: VPN server interface of the border of the network
+          register: eni_netif
+
+        - name: create an elastic ip
+          ec2_eip:
+            in_vpc: true
+            device_id: "{{ eni_netif.interface.id }}"
+            reuse_existing_ip_allowed: "{{ reuse_existing_ip | default(True) }}"
+          register: eip
+
+        - set_fact:
+            netif_id: "{{ eni_netif.interface.id }}" 
+      when: netif_id is not defined
+
+    - name: create the vpn server instance
+      ec2:
+        instance_ids:
+          - "{{ instance_id | default(omit) }}" 
+        image: "{{ image_id }}"
+        instance_type: t2.micro
+        key_name: "{{ key_id }}"
+        network_interfaces:
+          - "{{ netif_id }}"
+        wait: true
+        state: "{{ instance_state | default('present') }}"
+      register: vpn_server_inst
+
+    - set_fact:
+        inst_pub_ip: "{{ (vpn_server_inst.instances | first).public_ip }}"
+        inst_id: "{{ vpn_server_inst.instance_ids | first }}"
+
+    - name: wait aws say instances is fine to go
+      shell: aws ec2 wait instance-status-ok --instance-ids {{ inst_id }}
+
+    - name: gather instance public ssh keys as safe as possible
+      # --no-latest trick show all console log :)
+      shell: >-
+        aws ec2 get-console-output --instance-id {{ inst_id }} --output text --no-latest | \
+        sed -n '/BEGIN SSH HOST KEY KEYS/,/END SSH HOST KEY KEYS/p'
+      register: inst_console_log
+      until: inst_console_log.stdout_lines
+      retries: 10
+      delay: 30
+
+    - name: install instance ssh public keys
+      vars:
+        inst_ssh_pubkeys: "{{ inst_console_log.stdout_lines[1:-1] }}"
+      blockinfile:
+        path: "{{ (default_ssh_dir | default('~/.ssh')) | expanduser }}/known_hosts"
+        mode: '644'
+        create: yes
+        block: | 
+          {% for key in inst_ssh_pubkeys -%}
+          {{ inst_pub_ip }} {{ key }}
+          {% endfor %}
+    
