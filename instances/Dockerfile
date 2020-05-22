@@ -5,6 +5,6 @@ USER root
 
 RUN apk --update add bash gcc musl-dev python3-dev libffi-dev openssl-dev py3-pip openssh-client
 
-RUN pip3 install pip ansible awscli -U
+RUN pip3 install pip ansible awscli boto boto3 -U
 
 ENTRYPOINT ["/bin/bash"]
