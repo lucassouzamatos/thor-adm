@@ -60,8 +60,8 @@
             
             - set_fact:
                 sg_ids:
-                  - "{{ sg_vpn.group_id }}"
-                  - "{{ sg_ssh.group_id }}"
+                  - "{{ sg_vpn.group_id }}" # vpn server group 
+                  - "{{ sg_ssh.group_id }}" # dummy instances group
           when: is_vpn_operator
 
         - block:
@@ -197,7 +197,7 @@
           dest: "{{ sim_deployer_keys.path }}"
           mode: 0600
           content: "{{ access_keys | to_nice_json }}"
-
+      
       # TODO: find default method to apply keys
       - name: configure deployer access keys with awscli
         shell: aws configure set {{ item.name }} {{ item.value }}
