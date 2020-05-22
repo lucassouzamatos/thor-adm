@@ -11,10 +11,18 @@
                 "ec2:DetachNetworkInterface",
                 "ec2:DeleteNetworkInterface",
                 "ec2:AttachNetworkInterface",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeAddresses",
+                "ec2:AssociateAddresses",
                 {%- endif -%}
                 
+                "ec2:RegisterImage",
+                "ec2:CreateImage",
                 "ec2:GetConsoleOutput",
-                "ec2:DescribeInstances"
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeInstanceAttribute"
             ],
             "Resource": "*",
             "Condition": {
