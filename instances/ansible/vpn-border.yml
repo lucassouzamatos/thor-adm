@@ -24,7 +24,10 @@
             netif_id: "{{ eni_netif.interface.id }}" 
       when: netif_id is not defined
 
-    - name: create the vpn server instance
+    - set_fact:
+        vpn_server_instance: "{{ instance_state | default('present') }}"
+
+    - name: ensure vpn server instance is {{ vpn_server_instance }}
       ec2:
         instance_ids:
           - "{{ instance_id | default(omit) }}" 
@@ -34,7 +37,7 @@
         network_interfaces:
           - "{{ netif_id }}"
         wait: true
-        state: "{{ instance_state | default('present') }}"
+        state: "{{ vpn_server_instance }}"
       register: vpn_server_inst
 
     - set_fact:
