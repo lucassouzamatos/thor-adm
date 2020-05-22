@@ -159,6 +159,15 @@
           - "{{ ec2_deployer_policy.policy.arn }}"
       register: sim_deployer_user
 
+    - set_fact:
+        should_create_deployer_keys: "{{ sim_deployer_user.changed }}"
+      
+    - set_fact:
+        should_create_deployer_keys: true
+      tags:
+        - never
+        - create-deployer-keys
+
     - block:
       - block:
         - name: list deployer access keys
@@ -189,6 +198,7 @@
           mode: 0600
           content: "{{ access_keys | to_nice_json }}"
 
+      # TODO: find default method to apply keys
       - name: configure deployer access keys with awscli
         shell: aws configure set {{ item.name }} {{ item.value }}
         with_items:
@@ -196,9 +206,7 @@
             value: "{{ access_keys.AccessKeyId }}"
           - name: aws_secret_access_key
             value: "{{ access_keys.SecretAccessKey }}"
-      when: sim_deployer_user.changed
-      tags:
-        - create-deployer-keys
+      when: should_create_deployer_keys
 
     - name: ensure variables directory exists
       file:
