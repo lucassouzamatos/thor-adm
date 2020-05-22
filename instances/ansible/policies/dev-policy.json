@@ -6,6 +6,11 @@
             "Effect": "Allow",
             "Action": [
                 "ec2:DescribeInstances",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeVpcs",
+                "ec2:DescribeRouteTables",
+                "ec2:DescribeAvailabilityZones",
+                "ec2:DescribeNetworkAcls",
                 "ec2:DetachNetworkInterface",
                 "ec2:DescribeNetworkInterfaces",
                 "ec2:ImportKeyPair",
