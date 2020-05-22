@@ -83,9 +83,15 @@
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
     # just get a random one
     - block:
-        # SaoPaulo region sa-east-1b does not support t2.micro instances
-        - set_fact:
-            subnet_id: "{{ ['sa-east-1a', 'sa-east-1c'] | shuffle | first }}"
+        # SaoPaulo availability zone 'sa-east-1b' does not support t2.micro instances
+        - block:
+          - ec2_vpc_subnet_info:
+              filters:
+                availability-zone: "{{ ['sa-east-1a', 'sa-east-1c'] | shuffle | first }}" 
+            register: ec2_sp_subnet
+            
+          - set_fact:
+              subnet_id: "{{ (ec2_sp_subnet.subnets | first).id }}" 
           when: is_sp_region
         
         - block:
