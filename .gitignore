@@ -2,6 +2,9 @@
 # Created by https://www.gitignore.io/api/ssh,ansible,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=ssh,ansible,visualstudiocode
 
+### Custom Application Ignored Files ###
+instances/ansible/vars/
+
 ### Environment ###
 *.env
 
