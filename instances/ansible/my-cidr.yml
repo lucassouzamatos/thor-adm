@@ -3,9 +3,6 @@
 # Display one own public IP cidr block, when not found just show public IP.
 
 - hosts: localhost
-  vars:
-    cache_dir: /.my_pub_cidr_cache
-    use_my_network: true
   tasks:
     - file:
         path: "{{ cache_dir }}"

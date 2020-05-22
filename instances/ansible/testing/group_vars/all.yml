@@ -5,7 +5,7 @@ inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
 # ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
 
 # public ip gathering
-cache_dir: /.my_pub_cidr_cache
+cache_dir: ~/.cache/my_pub_cidr
 use_my_network: true
 
 # vpn operations section
