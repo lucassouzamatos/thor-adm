@@ -1,0 +1,14 @@
+---
+
+volume_size: "8"
+inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
+# ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
+
+# public ip gathering
+cache_dir: /.my_pub_cidr_cache
+use_my_network: true
+
+# vpn operations section
+is_vpn_operator: false
+wg_listen_port: null # required when is_vpn_operator is true
+teammate_cidrs: [] 

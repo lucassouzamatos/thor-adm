@@ -10,13 +10,6 @@
 # an IAM policy that handles all of this.
 
 - hosts: localhost
-  vars:
-    volume_size: "8"
-    inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
-    # ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
-    cache_dir: /.my_pub_cidr_cache
-    use_my_network: true
-  
   tasks:
     # gather ubuntu image id 
     - block:
@@ -30,22 +23,62 @@
             image_id: "{{ ami_ubuntu.images[0].image_id }}"
       when: image_id is not defined
     
-    # gather security group id
+    # gather security group ids
+    # there are two paths to obtain the groups ids, such as:
+    #   - user is regular, with ssh access from home.
+    #   - user is a vpn operator, so one of his/her instance is the vpn server,
+    #   which needs access from home and teammate's home. SSH access is limited
+    #   to operator home only.
     - block:
         - include_role:
             name: my_pub_cidr
 
-        - ec2_group:
-            name: ssh-hole
-            description: Default SSH rules for home connection
-            rules:
-              - proto: tcp
-                ports: 22
-                cidr_ip: "{{ my_cidr }}"
-          register: sg_ssh
+        - block:  
+            - ec2_group:
+                name: vpn-connection-hole
+                description: Default SSH and Wireguard rules for home connection
+                rules:
+                  - proto: tcp
+                    ports: 22
+                    cidr_ip: "{{ my_cidr }}"
 
-        - set_fact:
-            sg_id: "{{ sg_ssh.group_id }}"
+                  - proto: udp
+                    ports: "{{ wg_listen_port }}"
+                    cidr_ip:
+                      "{{ ([my_cidr] + teammate_cidrs) | to_nice_yaml }}"
+              register: sg_vpn
+
+            - ec2_group:
+                name: intranet-ssh-hole
+                description: Default SSH rules for private network
+                rules:
+                  - proto: tcp
+                    ports: 
+                      - 22
+                      - 3080
+                    cidr_ip: 0.0.0.0/0  # XXXX is it in some way insecure?
+              register: sg_ssh
+            
+            - set_fact:
+                sg_id: 
+                  - "{{ sg_vpn.group_id }}"
+                  - "{{ sg_ssh.group_id }}"
+          when: is_vpn_operator
+
+        - block:
+            - ec2_group:
+                name: ssh-hole
+                description: Default SSH rules for home connection
+                rules:
+                  - proto: tcp
+                    ports: 22
+                    cidr_ip: "{{ my_cidr }}"
+              register: sg_ssh
+            
+            - set_fact:
+                sg_id:
+                  - "{{ sg_ssh.group_id }}"
+          when: not is_vpn_operator
       when: sg_id is not defined
 
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
@@ -69,6 +102,12 @@
         is_sp_region: "{{ inst_region == 'sa-east-1' }}" 
     
     # generate a new ssh key when needed
+    # used one key for all of the instances, including vpn server
+    # assuming once it is compromissed, it could impersonate gns3-server
+    # to create a VM inside the host machine and exploit qemu or even gn3-server
+    # implementation and get access to the host machine.
+    #
+    # TODO: above could be avoided with password authenticated gns3-server
     - block:
         - set_fact:
             ssh_private_key: "{{ '/'.join([keys_dir, 'id_rsa']) }}"
@@ -112,3 +151,27 @@
         state: present
         managed_policy:
           - "{{ ec2_deployer_policy.policy.arn }}"
+
+    - name: ensure variables directory exists
+        file:
+          path: vars/
+          state: directory
+
+    - name: save created objects to disk, for further use
+        copy:
+          dest: "vars/ubuntu-sim-deployer.yml"
+          mode: 0644
+          backup: yes
+          content: |
+            ---
+            image_id: {{ image_id }}
+            key_id: {{ key_id }}
+            sg_id:
+              {{ sg_ids | to_nice_yaml }}
+            subnet_id: {{ subnet_id }}
+            volume_size: {{ volume_size }}
+      register: deployer_var
+
+    - name: include deployer variables
+      include_vars:
+        file: "{{ deployer_var.dest }}"

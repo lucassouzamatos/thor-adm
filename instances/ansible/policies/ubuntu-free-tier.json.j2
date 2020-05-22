@@ -5,9 +5,23 @@
             "Sid": "AllowsListCreatedInstances",
             "Effect": "Allow",
             "Action": [
+                {% if is_vpn_operator -%}
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DetachNetworkInterface",
+                "ec2:DeleteNetworkInterface",
+                "ec2:AttachNetworkInterface",
+                {%- endif -%}
+                
+                "ec2:GetConsoleOutput",
                 "ec2:DescribeInstances"
             ],
-            "Resource": "*"
+            "Resource": "*",
+            "Condition": {
+                "IpAddress": {
+                    "aws:SourceIp": "{{ my_cidr }}"
+                }
+            }
         },
         {
             "Sid": "AllowsPredefinedImagesAndNetworking",
@@ -16,7 +30,11 @@
             "Resource": [
                 "arn:aws:ec2:*::image/{{ image_id }}",
                 "arn:aws:ec2:*:*:key-pair/{{ key_id }}",
-                "arn:aws:ec2:*:*:security-group/{{ sg_id }}",
+
+                {%- for group in sg_ids -%}
+                "arn:aws:ec2:*:*:security-group/{{ group }}",
+                {%- endfor -%}
+                
                 "arn:aws:ec2:*:*:subnet/{{ subnet_id }}",
                 "arn:aws:ec2:*:*:network-interface/*"
             ]
