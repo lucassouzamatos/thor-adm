@@ -44,8 +44,7 @@
 
                   - proto: udp
                     ports: "{{ wg_listen_port }}"
-                    cidr_ip:
-                      "{{ ([my_cidr] + teammate_cidrs) | to_nice_yaml }}"
+                    cidr_ip: "{{ [my_cidr] + teammate_cidrs }}"
               register: sg_vpn
 
             - ec2_group:
@@ -79,7 +78,7 @@
                 sg_ids:
                   - "{{ sg_ssh.group_id }}"
           when: not is_vpn_operator
-      when: sg_idsis not defined
+      when: sg_ids is not defined
 
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
     # just get a random one
@@ -91,7 +90,7 @@
         
         - block:
           - ec2_vpc_subnet_info:
-              register: vpc_subnets
+            register: vpc_subnets
 
           - set_fact:
               subnet_id: "{{ (vpc_subnets.subnets | shuffle | first).subnet_id }}"
@@ -123,9 +122,9 @@
 
         - set_fact:
             ssh_pubkey: "{{ lookup('file', ssh_private_key + '.pub') }}"
-      when: ssh_pubkey is not defined
+      when: key_id is not defined and ssh_pubkey is not defined
       vars:
-        - keys_dir: /vpnkeys
+        - keys_dir: "{{ default_ssh_dir | expanduser }}"
 
     # gather key pair id, which is the key name
     - block:
@@ -137,6 +136,7 @@
   
       - set_fact:
           key_id: "{{ ec2_key_pair.key.name }}"
+      when: key_id is not defined
 
     - name: create deployer user with defined instance permissions
       iam_managed_policy:
@@ -153,23 +153,22 @@
           - "{{ ec2_deployer_policy.policy.arn }}"
 
     - name: ensure variables directory exists
-        file:
-          path: vars/
-          state: directory
+      file:
+        path: vars/
+        state: directory
 
     - name: save created objects to disk, for further use
-        copy:
-          dest: "vars/ubuntu-sim-deployer.yml"
-          mode: 0644
-          backup: yes
-          content: |
-            ---
-            image_id: {{ image_id }}
-            key_id: {{ key_id }}
-            sg_ids:
-              {{ sg_ids | to_nice_yaml }}
-            subnet_id: {{ subnet_id }}
-            volume_size: {{ volume_size }}
+      copy:
+        dest: "vars/ubuntu-sim-deployer.yml"
+        mode: 0644
+        backup: yes
+        content: |
+          ---
+          image_id: {{ image_id }}
+          key_id: {{ key_id }}
+          sg_ids: {{ sg_ids }}
+          subnet_id: {{ subnet_id }}
+          volume_size: {{ volume_size }}
       register: deployer_var
 
     - name: include deployer variables
