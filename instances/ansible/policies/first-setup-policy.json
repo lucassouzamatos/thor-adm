@@ -21,13 +21,16 @@
             "Action": [
                 "iam:CreatePolicy",
                 "iam:GetPolicyVersion",
+                "iam:DeleteAccessKey",
                 "iam:GetPolicy",
                 "iam:ListAttachedUserPolicies",
                 "iam:AttachUserPolicy",
                 "iam:GetUser",
                 "iam:CreatePolicyVersion",
                 "iam:CreateUser",
-                "iam:SetDefaultPolicyVersion"
+                "iam:CreateAccessKey",
+                "iam:SetDefaultPolicyVersion",
+                "iam:DeletePolicyVersion"
             ],
             "Resource": [
                 "arn:aws:iam::*:policy/EC2UbuntuFreeTierDeployer",
@@ -45,7 +48,8 @@
             "Action": [
                 "iam:ListPolicies",
                 "iam:ListPolicyVersions",
-                "iam:ListUsers"
+                "iam:ListUsers",
+                "iam:ListAccessKeys"
             ],
             "Resource": "*"
         },

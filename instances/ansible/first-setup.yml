@@ -147,10 +147,52 @@
     
     - name: create deployer user assigned to created group
       iam_user:
-        name: ubuntu-sim-deployer
+        name: "{{ users.simulation_deployer }}"
         state: present
         managed_policy:
           - "{{ ec2_deployer_policy.policy.arn }}"
+      register: sim_deployer_user
+
+    - block:
+      - block:
+        - name: list deployer access keys
+          shell: aws iam list-access-keys --user-name {{ users.simulation_deployer }} --output json
+          register: deployer_keys
+
+        - name: delete existing deployer access keys
+          shell: >-
+            aws iam delete-access-key --user-name {{ users.simulation_deployer }} \
+              --access-key-id {{ item.AccessKeyId }}
+          with_items:
+            - "{{ (deployer_keys.stdout.strip() | from_json).AccessKeyMetadata }}"
+        tags:
+          - delete-existing-deployer-keys
+
+      - name: download deployer access keys
+        shell: >-
+          aws iam create-access-key --user-name {{ users.simulation_deployer }} \
+            --output json --query AccessKey
+        register: sim_deployer_access_keys
+
+      - set_fact:
+          access_keys: "{{ sim_deployer_access_keys.stdout | from_json }}"
+
+      - name: save deployer access keys to file
+        copy:
+          dest: "{{ sim_deployer_keys.path }}"
+          mode: 0600
+          content: "{{ access_keys | to_nice_json }}"
+
+      - name: configure deployer access keys with awscli
+        shell: aws configure set {{ item.name }} {{ item.value }}
+        with_items:
+          - name: aws_access_key_id
+            value: "{{ access_keys.AccessKeyId }}"
+          - name: aws_secret_access_key
+            value: "{{ access_keys.SecretAccessKey }}"
+      when: sim_deployer_user.changed
+      tags:
+        - create-deployer-keys
 
     - name: ensure variables directory exists
       file:
@@ -159,7 +201,7 @@
 
     - name: save created objects to disk, for further use
       copy:
-        dest: "vars/ubuntu-sim-deployer.yml"
+        dest: "vars/{{ users.simulation_deployer }}.yml"
         mode: 0644
         backup: yes
         content: |
