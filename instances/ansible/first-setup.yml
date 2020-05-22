@@ -201,6 +201,7 @@
       # TODO: find default method to apply keys
       - name: configure deployer access keys with awscli
         shell: aws configure set {{ item.name }} {{ item.value }}
+        no_log: true
         with_items:
           - name: aws_access_key_id
             value: "{{ access_keys.AccessKeyId }}"
