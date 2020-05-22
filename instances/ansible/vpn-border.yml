@@ -1,6 +1,9 @@
 ---
 
 - hosts: localhost
+  environment:
+    AWS_DEFAULT_REGION: "{{ inst_region }}"
+  
   tasks:
     - block:
         - name: create the network interface with an elastic ip
