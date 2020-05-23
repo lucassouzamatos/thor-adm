@@ -5,6 +5,16 @@
     AWS_DEFAULT_REGION: "{{ inst_region }}"
   
   tasks:
+    - name: check where the default setup variables file is present
+      stat:
+        path: "{{ default_setup_variables_file }}"
+      register: default_setup_vars_stat
+
+    - name: include deployer setup variables
+      include_vars:
+        file: "{{ default_setup_variables_file }}"
+      when: default_setup_vars_stat.stat.exists
+
     - block:
         - name: create the network interface with an elastic ip
           ec2_eni:

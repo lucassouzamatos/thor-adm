@@ -235,7 +235,7 @@
 
     - name: save created objects to disk, for further use
       copy:
-        dest: "{{ [default_vars_dir, users.simulation_deployer + '.yml'] | join('/') }}"
+        dest: "{{ default_setup_variables_file }}"
         mode: 0644
         backup: yes
         content: |
@@ -246,8 +246,3 @@
           subnet_id: {{ subnet_id }}
           subnet_cidr_block: {{ subnet_cidr_block }}
           volume_size: {{ volume_size }}
-      register: deployer_var
-
-    - name: include deployer variables
-      include_vars:
-        file: "{{ deployer_var.dest }}"

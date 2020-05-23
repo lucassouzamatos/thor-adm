@@ -25,6 +25,10 @@ is_vpn_operator: false
 wg_listen_port: 20476 # required when is_vpn_operator is true
 teammate_cidrs: []
 
+# defines where objects gathered in first-setup and allowed for deployer user
+# in IAM policy will be saved
+default_setup_variables_file: "{{ [default_vars_dir, users.simulation_deployer + '.yml'] | join('/') }}"
+
 # VPN server section
 # subnet_id: subnet-6e951735
 # key_id: test-keypair
