@@ -135,6 +135,11 @@
             path: "{{ ssh_private_key + '.pub' }}" 
           register: gen_ssh_key_stat
 
+        - name: ensure ssh directory exists
+          file:
+            path: "{{ keys_dir }}"
+            state: directory
+
         # only create a new ssh key when one is missing
         - openssh_keypair:
             path: "{{ ssh_private_key }}"
