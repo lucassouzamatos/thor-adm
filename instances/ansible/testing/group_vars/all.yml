@@ -21,7 +21,7 @@ cache_dir: ~/.cache/my_pub_cidr
 use_my_network: true
 
 # vpn operations section
-is_vpn_operator: true
+is_vpn_operator: false
 wg_listen_port: 20476 # required when is_vpn_operator is true
 teammate_cidrs: []
 
