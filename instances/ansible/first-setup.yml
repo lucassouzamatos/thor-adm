@@ -11,6 +11,11 @@
 
 - hosts: localhost
   tasks:
+    - include_role:
+        name: aws_config
+      vars:
+        config: "{{ setup_manager_config }}"
+
     # gather ubuntu image id 
     - block:
         - ec2_ami_info:
@@ -207,25 +212,20 @@
           aws iam create-access-key --user-name {{ users.simulation_deployer }} \
             --output json --query AccessKey
         register: sim_deployer_access_keys
-
-      - set_fact:
+        
+      - name: transform credentials in recognazable format
+        set_fact:
+          deployer_creds:
+            access_key_id: "{{ access_keys.AccessKeyId }}"
+            secret_access_key: "{{ access_keys.SecretAccessKey }}"
+        vars:
           access_keys: "{{ sim_deployer_access_keys.stdout | from_json }}"
 
       - name: save deployer access keys to file
         copy:
-          dest: "{{ sim_deployer_keys.path }}"
+          dest: "{{ sim_deployer_config }}"
           mode: 0600
-          content: "{{ access_keys | to_nice_json }}"
-      
-      # TODO: find default method to apply keys
-      - name: configure deployer access keys with awscli
-        shell: aws configure set {{ item.name }} {{ item.value }}
-        no_log: true
-        with_items:
-          - name: aws_access_key_id
-            value: "{{ access_keys.AccessKeyId }}"
-          - name: aws_secret_access_key
-            value: "{{ access_keys.SecretAccessKey }}"
+          content: "{{ deployer_creds | to_nice_json }}"
       when: should_create_deployer_keys
 
     - name: ensure variables directory exists

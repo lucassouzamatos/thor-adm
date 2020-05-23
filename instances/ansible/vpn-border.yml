@@ -5,6 +5,11 @@
     AWS_DEFAULT_REGION: "{{ inst_region }}"
   
   tasks:
+    - include_role:
+        name: aws_config
+      vars: 
+        config: "{{ sim_deployer_config }}"
+
     - name: check where the default setup variables file is present
       stat:
         path: "{{ default_setup_variables_file }}"

@@ -1,5 +1,9 @@
 ---
 
+# where credentials should be loaded
+setup_manager_config: null
+sim_deployer_config: aws_sim_deployer.json
+
 # User names section
 users:
   simulation_deployer: ubuntu-sim-deployer
@@ -10,11 +14,6 @@ inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') or lookup('pipe', 'aws conf
 
 default_ssh_dir: ~/.ssh
 default_vars_dir: vars 
-
-# Simulation deployer access keys section
-sim_deployer_keys:
-  path: aws_sim_deployer.env
-  auto_configure: true
 
 # public ip gathering
 cache_dir: ~/.cache/my_pub_cidr
