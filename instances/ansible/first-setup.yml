@@ -230,12 +230,12 @@
 
     - name: ensure variables directory exists
       file:
-        path: vars/
+        path: "{{ default_vars_dir }}"
         state: directory
 
     - name: save created objects to disk, for further use
       copy:
-        dest: "vars/{{ users.simulation_deployer }}.yml"
+        dest: "{{ [default_vars_dir, users.simulation_deployer + '.yml'] | join('/') }}"
         mode: 0644
         backup: yes
         content: |
