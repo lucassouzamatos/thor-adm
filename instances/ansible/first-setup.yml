@@ -129,7 +129,7 @@
     # TODO: above could be avoided with password authenticated gns3-server
     - block:
         - set_fact:
-            ssh_private_key: "{{ '/'.join([keys_dir, 'id_rsa']) }}"
+            ssh_private_key: "{{ [keys_dir, 'id_rsa'] | join('/') }}"
         
         - stat:
             path: "{{ ssh_private_key + '.pub' }}" 
