@@ -3,7 +3,6 @@
 - hosts: vpn_servers
   vars:
     _server_index: 0
-    local_basedir: client-configs
   tasks:
     - name: update server packages
       apt:
@@ -29,6 +28,14 @@
         name: sshd
         state: reloaded
       when: disable_ssh_x11forwarding.changed
+
+    - set_fact:
+        wg_server:
+          preup: |
+            iptables -t nat -A POSTROUTING -s {{ local_addr }}/{{ netmask }} -d {{ subnet_cidr_block }} -j MASQUERADE
+
+    - debug:
+        var: wg_server
 
     - include_role:
         name: wireguard/server

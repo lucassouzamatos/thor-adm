@@ -1,7 +1,17 @@
 ---
 
 - hosts: localhost
-  
+  tasks:
+    - name: check where the default setup variables file is present
+      stat:
+        path: "{{ default_setup_variables_file }}"
+      register: default_setup_vars_stat
+
+    - name: include deployer setup variables
+      include_vars:
+        file: "{{ default_setup_variables_file }}"
+      when: default_setup_vars_stat.stat.exists
+
 - import_playbook: first-setup.yml
   tags:
     - first-setup
@@ -10,3 +20,22 @@
   when: is_vpn_operator
   tags:
     - vpn-border
+
+- hosts: localhost
+  vars:
+    ssh_dir: "{{ '~/.ssh' | expanduser }}"
+  tasks:
+    - name: ensure destination ssh directory exists
+      file:
+        path: "{{ ssh_dir }}"
+        state: directory
+
+    # ugly!
+    - name: ensure ansible finds ssh configurations at runtime
+      shell: find {{ default_ssh_dir | expanduser }} -exec cp -r '{}' {{ ssh_dir }} \; 
+
+- import_playbook: wireguard.yml
+  when: is_vpn_operator
+  tags:
+    - wireguard
+  

@@ -7,6 +7,9 @@ ansible_become: true
 network: 10.100.200
 local_addr: "{{ network }}.1"
 
+# define addresses NATed by server when contacting subnet 
+netmask: 24 
+
 # directory where client wireguard tunnels will be downloaded
 local_basedir: client-configs
 
@@ -24,5 +27,5 @@ peer:
 
 # define how many clients to configure and how they are being named
 clients:
-  count: "{{ teammate_cidrs | count }}"
+  count: "{{ teammate_cidrs | count + 1 }}"
   format: client%02x 

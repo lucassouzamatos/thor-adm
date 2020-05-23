@@ -3,7 +3,7 @@ PrivateKey = {{ pvtkey_content.stdout }}
 Address = {{ client_addr }}
 
 {% for name in ['DNS', 'Table', 'MTU', 'PreUp', 'PostUp', 'PreDown', 'PostDown'] -%}
-    {{ name }} = {{ wg[name | lower] | default(omit) }}
+    {{ name }} = {{ wg_client[name | lower] | default(omit) }}
 {%- endfor %}
 
 [Peer]

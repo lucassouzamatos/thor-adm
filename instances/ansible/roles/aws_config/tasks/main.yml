@@ -3,10 +3,12 @@
 - name: read aws configure json file in memory
   shell: cat {{ config }}
   register: aws_cfg_out
+  no_log: true
 
 - set_fact:
     aws_data: "{{ aws_cfg_out.stdout.strip() | from_json }}"
-
+  no_log: true
+  
 - name: configure aws credentials using awscli
   shell: aws configure set {{ item.name }} {{ item.value }}
   no_log: true
@@ -17,5 +19,5 @@
       value: "{{ aws_data.secret_access_key }}"
 
 - name: maybe configure default region
-  shell: aws configure set default_region {{ aws_data.default_region }}
+  shell: aws configure set default.region {{ aws_data.default_region }}
   when: aws_data.get('default_region')

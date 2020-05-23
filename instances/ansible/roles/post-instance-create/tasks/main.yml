@@ -1,0 +1,36 @@
+---
+
+- name: wait aws say instances is fine to go
+  shell: aws ec2 wait instance-status-ok --instance-ids {{ inst_id }}
+
+- name: gather instance public ssh keys as safe as possible
+  # --no-latest trick show all console log :)
+  shell: >-
+    aws ec2 get-console-output --instance-id {{ inst_id }} --output text --no-latest | \
+    sed -n '/BEGIN SSH HOST KEY KEYS/,/END SSH HOST KEY KEYS/p'
+  register: inst_console_log
+  until: inst_console_log.stdout_lines
+  retries: 10
+  delay: 30
+
+- name: ensure ssh directory exists
+  file:
+    path: "{{ default_ssh_dir | expanduser }}"
+    state: directory
+
+- name: install instance ssh public keys
+  vars:
+    inst_ssh_pubkeys: "{{ inst_console_log.stdout_lines[1:-1] }}"
+  blockinfile:
+    path: "{{ default_ssh_dir | expanduser }}/known_hosts"
+    mode: 0644
+    create: yes
+    block: | 
+      {% for key in inst_ssh_pubkeys -%}
+      {{ inst_ip }} {{ key }}
+      {% endfor %}
+
+- name: add instances in virtual {{ host_group }} groups
+  add_host:
+    name: "{{ inst_ip }}"
+    groups: "{{ host_group }}"

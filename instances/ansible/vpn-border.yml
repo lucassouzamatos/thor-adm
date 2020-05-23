@@ -10,77 +10,44 @@
       vars: 
         config: "{{ sim_deployer_config }}"
 
-    - name: check where the default setup variables file is present
-      stat:
-        path: "{{ default_setup_variables_file }}"
-      register: default_setup_vars_stat
-
-    - name: include deployer setup variables
-      include_vars:
-        file: "{{ default_setup_variables_file }}"
-      when: default_setup_vars_stat.stat.exists
-
-    - block:
-        - name: create the network interface with an elastic ip
-          ec2_eni:
-            security_groups: "{{ sg_ids | first }}"
-            subnet_id: "{{ subnet_id }}"
-            description: VPN server interface of the border of the network
-          register: eni_netif
-
-        - name: create an elastic ip
-          ec2_eip:
-            in_vpc: true
-            device_id: "{{ eni_netif.interface.id }}"
-            reuse_existing_ip_allowed: "{{ reuse_existing_ip | default(True) }}"
-          register: eip
-
-        - set_fact:
-            netif_id: "{{ eni_netif.interface.id }}" 
-      when: netif_id is not defined
-
     - set_fact:
         vpn_server_instance: "{{ instance_state | default('present') }}"
 
     - name: ensure vpn server instance is {{ vpn_server_instance }}
       ec2:
-        instance_ids:
-          - "{{ instance_id | default(omit) }}" 
+        instance_ids: "{{ instance_ids | default(omit) }}" 
         image: "{{ image_id }}"
         instance_type: t2.micro
         key_name: "{{ key_id }}"
-        network_interfaces:
-          - "{{ netif_id }}"
+        group_id: "{{ sg_ids | first }}"
         wait: true
         state: "{{ vpn_server_instance }}"
+        count: "{{ vpn_instances_count }}"
       register: vpn_server_inst
 
-    - set_fact:
-        inst_pub_ip: "{{ (vpn_server_inst.instances | first).public_ip }}"
-        inst_id: "{{ vpn_server_inst.instance_ids | first }}"
+    - block:
+      - name: gather all attached network interfaces
+        ec2_eni_info:
+          filters:
+            attachment.instance-id: "{{ vpn_server_inst.instance_ids }}"
+        register: attached_netifs
 
-    - name: wait aws say instances is fine to go
-      shell: aws ec2 wait instance-status-ok --instance-ids {{ inst_id }}
+      - name: allocate an elastic ip for each created instance 
+        ec2_eip:
+          in_vpc: true
+          device_id: "{{ item.id }}"
+          # reuse_existing_ip_allowed: "{{ reuse_existing_ip | default(True) }}"
+        with_items:
+          - "{{ attached_netifs.network_interfaces }}"
+      when: vpn_server_inst.changed
 
-    - name: gather instance public ssh keys as safe as possible
-      # --no-latest trick show all console log :)
-      shell: >-
-        aws ec2 get-console-output --instance-id {{ inst_id }} --output text --no-latest | \
-        sed -n '/BEGIN SSH HOST KEY KEYS/,/END SSH HOST KEY KEYS/p'
-      register: inst_console_log
-      until: inst_console_log.stdout_lines
-      retries: 10
-      delay: 30
-
-    - name: install instance ssh public keys
+    - name: execute post-create role
+      include_role:
+        name: post-instance-create
       vars:
-        inst_ssh_pubkeys: "{{ inst_console_log.stdout_lines[1:-1] }}"
-      blockinfile:
-        path: "{{ (default_ssh_dir | default('~/.ssh')) | expanduser }}/known_hosts"
-        mode: 0644
-        create: yes
-        block: | 
-          {% for key in inst_ssh_pubkeys -%}
-          {{ inst_pub_ip }} {{ key }}
-          {% endfor %}
+        inst_id: "{{ item.id }}" 
+        inst_ip: "{{ item.public_ip }}"
+        host_group: vpn_servers
+      with_items:
+        - "{{ vpn_server_inst.instances }}"
     

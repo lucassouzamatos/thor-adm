@@ -16,6 +16,16 @@
       vars:
         config: "{{ setup_manager_config }}"
 
+    - name: check where the generated setup variables file is present
+      stat:
+        path: "{{ default_setup_variables_file }}"
+      register: default_setup_vars_stat
+
+    - name: include deployer setup variables
+      include_vars:
+        file: "{{ default_setup_variables_file }}"
+      when: default_setup_vars_stat.stat.exists
+
     # gather ubuntu image id 
     - block:
         - ec2_ami_info:
@@ -35,6 +45,11 @@
     #   which needs access from home and teammate's home. SSH access is limited
     #   to operator home only.
     - block:
+        - name: ensure cache directory exists
+          file:
+            path: "{{ cache_dir }}"
+            state: directory
+
         - include_role:
             name: my_pub_cidr
 
@@ -168,7 +183,7 @@
           key_id: "{{ ec2_key_pair.key.name }}"
       when: key_id is not defined
 
-    - name: create deployer user with defined instance permissions
+    - name: create deployer policy with defined instance permissions
       iam_managed_policy:
         policy_name: EC2UbuntuFreeTierDeployer
         policy_description: Allows user to deploy free-tier ubuntu instances
@@ -240,6 +255,7 @@
         backup: yes
         content: |
           ---
+          my_cidr: {{ my_cidr }}
           image_id: {{ image_id }}
           key_id: {{ key_id }}
           sg_ids: {{ sg_ids }}

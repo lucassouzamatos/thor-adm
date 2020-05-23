@@ -9,7 +9,7 @@ users:
   simulation_deployer: ubuntu-sim-deployer
 
 volume_size: "8"
-inst_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') or lookup('pipe', 'aws configure get default.region') }}"
+inst_region: "{{ lookup('pipe', 'aws configure get default.region') or lookup('env', 'AWS_DEFAULT_REGION') }}"
 # ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
 
 default_ssh_dir: ~/.ssh
@@ -21,6 +21,7 @@ use_my_network: true
 
 # vpn operations section
 is_vpn_operator: false
+vpn_instances_count: 1
 wg_listen_port: 20476 # required when is_vpn_operator is true
 teammate_cidrs: []
 
