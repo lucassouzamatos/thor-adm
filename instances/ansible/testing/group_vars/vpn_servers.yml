@@ -15,7 +15,7 @@ private: "{{ wg_basedir }}/private"
 client_cfg_dir: "{{ wg_basedir }}/configs"
 
 peer:
-  PersistentKeepAlive: 25
+  persistenkeepalive: 25
 
 clients:
   # count: "{{ teammate_cidrs | count }}"
