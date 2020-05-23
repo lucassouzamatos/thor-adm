@@ -27,7 +27,7 @@
     mode: '0700'
 
 - include_tasks: configure_peer.yml
-  with_sequence: start=0 end={{ clients.count | int }} format={{ clients.format }}
+  with_sequence: start=0 end={{ clients.count | int - 1 }} format={{ clients.format }}
 
 - name: reset last client private key from facts 
   set_fact:

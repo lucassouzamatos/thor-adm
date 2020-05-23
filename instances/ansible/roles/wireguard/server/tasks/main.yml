@@ -48,7 +48,7 @@
     keys:
       - pvt_file: "{{ item }}"
         pub_file: "{{ item }}"
-  with_sequence: start=0 end={{ clients.count | int }} format={{ clients.format }}
+  with_sequence: start=0 end={{ clients.count | int - 1 }} format={{ clients.format }}
 
 - include_role:
     name: wireguard/configure
