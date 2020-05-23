@@ -78,8 +78,8 @@
                 sg_ids:
                   - "{{ sg_ssh.group_id }}"
           when: not is_vpn_operator
-      when: sg_ids is not defined
-
+      when: sg_ids is not defined 
+    
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
     # just get a random one
     - block:
@@ -89,9 +89,9 @@
               filters:
                 availability-zone: "{{ ['sa-east-1a', 'sa-east-1c'] | shuffle | first }}" 
             register: ec2_sp_subnet
-            
+           
           - set_fact:
-              subnet_id: "{{ (ec2_sp_subnet.subnets | first).id }}" 
+              the_subnet: "{{ ec2_sp_subnet.subnets | first }}"
           when: is_sp_region
         
         - block:
@@ -99,13 +99,27 @@
             register: vpc_subnets
 
           - set_fact:
-              subnet_id: "{{ (vpc_subnets.subnets | shuffle | first).subnet_id }}"
+              the_subnet: "{{ vpc_subnets.subnets | shuffle | first }}"
           when: not is_sp_region
+
+        - set_fact:
+            subnet_id: "{{ the_subnet.id }}"
+            subnet_cidr_block: "{{ the_subnet.cidr_block }}"
 
       when: subnet_id is not defined
       vars: 
-        is_sp_region: "{{ inst_region == 'sa-east-1' }}" 
-    
+        is_sp_region: "{{ inst_region == 'sa-east-1' }}"
+
+    # automatically gather subnet cidr block when user defined subnet_id
+    - block:
+        - ec2_vpc_subnet_info:
+            subnet_ids: "{{ subnet_id }}"
+          register: the_user_subnet
+
+        - set_fact:
+            subnet_cidr_block: "{{ (the_user_subnet.subnets | first).cidr_block }}"
+      when: subnet_cidr_block is not defined
+
     # generate a new ssh key when needed
     # used one key for all of the instances, including vpn server
     # assuming once it is compromissed, it could impersonate gns3-server
@@ -225,6 +239,7 @@
           key_id: {{ key_id }}
           sg_ids: {{ sg_ids }}
           subnet_id: {{ subnet_id }}
+          subnet_cidr_block: {{ subnet_cidr_block }}
           volume_size: {{ volume_size }}
       register: deployer_var
 

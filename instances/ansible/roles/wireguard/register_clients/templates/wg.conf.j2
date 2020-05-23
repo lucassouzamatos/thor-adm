@@ -8,7 +8,7 @@ Address = {{ client_addr }}
 
 [Peer]
 PublicKey = {{ local_pubkey }}
-AllowedIps = {{ local_addr }}/32,{{ vpc_subnet_cidr }}
+AllowedIps = {{ local_addr }}/32,{{ subnet_cidr_block }}
 Endpoint = {{ ansible_host }}:{{ wg_listen_port }}
 
 {% for name in ['PersistentKeepAlive', 'Endpoint'] -%}
