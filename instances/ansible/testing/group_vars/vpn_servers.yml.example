@@ -1,0 +1,28 @@
+---
+
+ansible_user: ubuntu
+ansible_become: true
+
+# wireguard private network section
+network: 10.100.200
+local_addr: "{{ network }}.1"
+
+# directory where client wireguard tunnels will be downloaded
+local_basedir: client-configs
+
+# default directory used for wireguard configuration.
+# generally there is not need to change this and it is
+# here for compatibility purposes.
+wg_basedir: /etc/wireguard
+pubkeys: "{{ wg_basedir }}/pubkeys"
+private: "{{ wg_basedir }}/private"
+client_cfg_dir: "{{ wg_basedir }}/configs"
+
+# for clients behind NAT, otherwise it is safe to comment out
+peer:
+  persistenkeepalive: 25
+
+# define how many clients to configure and how they are being named
+clients:
+  count: "{{ teammate_cidrs | count }}"
+  format: client%02x 

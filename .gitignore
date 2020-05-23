@@ -4,6 +4,7 @@
 
 ### Custom Application Ignored Files ###
 instances/ansible/vars/
+**/group_vars/*.yml
 
 ### Environment ###
 *.env
