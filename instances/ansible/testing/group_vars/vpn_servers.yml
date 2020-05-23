@@ -1,0 +1,23 @@
+---
+
+ansible_user: ubuntu
+ansible_become: true
+
+network: 10.100.200
+local_addr: "{{ network }}.1"
+vpc_subnet_cidr: 172.31.32.0/20
+
+local_basedir: client-configs
+wg_basedir: /etc/wireguard
+
+pubkeys: "{{ wg_basedir }}/pubkeys"
+private: "{{ wg_basedir }}/private"
+client_cfg_dir: "{{ wg_basedir }}/configs"
+
+peer:
+  PersistentKeepAlive: 25
+
+clients:
+  # count: "{{ teammate_cidrs | count }}"
+  count: 1
+  format: client%02x 

@@ -1,0 +1,8 @@
+[Interface]
+PrivateKey = {{ pvtkey_content.stdout }}
+ListenPort = {{ wg_listen_port }}
+Address = {{ local_addr }}/{{ cidr_netmask }}
+
+{% for name in ['ListenPort', 'DNS', 'Table', 'MTU', 'PreUp', 'PostUp', 'PreDown', 'PostDown'] -%}
+    {{ name }} = {{ wg[name | lower] | default(omit) }}
+{%- endfor %}

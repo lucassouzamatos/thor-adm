@@ -1,0 +1,70 @@
+---
+
+- name: install wireguard package
+  apt:
+    name: wireguard-tools
+
+- name: delete wireguard base directory
+  file:
+    path: "{{ wg_basedir }}"
+    state: absent
+  tags:
+    - never
+    - reconfigure-wireguard
+
+- name: ensure wireguard directories exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode | default(0700) }}"
+  with_items:
+    - path: "{{ wg_basedir }}"
+    - path: "{{ private }}"
+    - path: "{{ pubkeys }}"
+      mode: '0750'
+
+- include_role:
+    name: wireguard/keyring
+  vars:
+    pubkeys: "{{ wg_basedir }}"
+    private: "{{ wg_basedir }}"
+    keys:
+      - pvt_file: "{{ local_pvt_file }}"
+        pub_file: "{{ local_pub_file }}"
+  tags:
+    - server-config
+
+- shell: cat "{{ wg_basedir }}/{{ local_pub_file }}"
+  register: local_pubkey_content
+
+- set_fact:
+    local_pubkey: "{{ local_pubkey_content.stdout }}"
+
+- include_role:
+    name: wireguard/keyring
+  vars:
+    keys:
+      - pvt_file: "{{ item }}"
+        pub_file: "{{ item }}"
+  with_sequence: start=0 end={{ clients.count | int }} format={{ clients.format }}
+
+- include_role:
+    name: wireguard/configure
+  vars:
+    pvt_file: "{{ local_pvt_file }}"
+
+- include_role:
+    name: wireguard/bundle
+
+- include_tasks: roles/wireguard/grab_interface.yml
+
+- name: cleanup client keys and configurations
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ client_cfg_dir }}"
+    - "{{ private }}"
+    - "{{ pubkeys }}"

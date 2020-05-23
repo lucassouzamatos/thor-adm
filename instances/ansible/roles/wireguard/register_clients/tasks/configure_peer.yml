@@ -1,0 +1,43 @@
+---
+
+- set_fact:
+    client_conf_file: "{{ client_cfg_dir }}/{{ item }}.conf"
+    client_addr: "{{ network }}.{{ last_host }}"
+
+- shell: cat {{ pubkeys }}/{{ item }}
+  register: client_pubkey 
+
+# - shell: wg genpsk
+#   become: no
+#   register: client_psk
+
+- name: set clients on server configuration
+  lineinfile: 
+    path: "{{ conf_file }}" 
+    line: |
+      [Peer]
+      PublicKey = {{ client_pubkey.stdout }} 
+      AllowedIPs = {{ client_addr }}/32
+
+- shell: cat {{ private }}/{{ item }}
+  register: pvtkey_content
+  no_log: true
+
+- name: create template configuration
+  template:
+    src: wg.conf.j2
+    dest: "{{ client_conf_file }}"
+    backup: yes
+    owner: root
+    group: root
+    mode: 0400 
+
+- name: remove omitted values
+  replace:
+    path: "{{ client_conf_file }}"
+    regexp: '.*__omit_place_holder__.*'
+    replace: ""
+
+- name: increase last host number
+  set_fact:
+    last_host: "{{ last_host | int + 1 }}"

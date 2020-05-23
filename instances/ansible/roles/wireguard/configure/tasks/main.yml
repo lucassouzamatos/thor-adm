@@ -1,0 +1,36 @@
+--- 
+
+- name: define configuration variable
+  set_fact:
+    conf_file: "{{ wg_basedir }}/{{ wg_interface | mandatory }}.conf"
+
+- name: check wheter a configuration file is present
+  stat:
+    path: "{{ conf_file }}"
+  register: wg_conf_st
+  tags:
+    - server-config
+
+- block:  
+  - include_tasks: parse_config.yml
+    tags:
+      - server-config
+  
+  - name: register clients configuration
+    include_role:
+      name: wireguard/register_clients
+
+  - include_role: 
+      name: wireguard/daemon
+  when: wg_conf_st is not defined or not wg_conf_st.stat.exists
+
+- include_role: 
+    name: wireguard/daemon
+  when: wg_conf_st is defined and wg_conf_st.stat.exists 
+
+- name: always fix configuration permissions
+  file:
+    path: "{{ conf_file }}"
+    owner: root
+    group: root
+    mode: 0600

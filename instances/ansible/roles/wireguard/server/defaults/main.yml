@@ -1,0 +1,11 @@
+---
+
+local_pvt_file: local.key
+local_pub_file: local.pub
+
+# network
+network: 10.100.200
+cidr_netmask: 24 
+local_addr: "{{ network }}.1"
+
+client_addresses: []

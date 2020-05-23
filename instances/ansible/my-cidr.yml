@@ -2,7 +2,7 @@
 
 # Display one own public IP cidr block, when not found just show public IP.
 
-- hosts: localhost
+- hosts: localhost 
   tasks:
     - file:
         path: "{{ cache_dir }}"

@@ -1,0 +1,34 @@
+---
+
+- name: grab running allowed ip addresses
+  shell: wg | grep ips | awk '{print $3}'
+  register: running_alloweds_ips
+
+- set_fact:
+    running_alloweds_ips: 
+      stdout_lines: 
+        - "{{ local_addr }}"
+  when: running_alloweds_ips.stdout == ""
+
+- name: set last ip address
+  set_fact:
+    last_ip: "{{ running_alloweds_ips.stdout_lines | max }}"
+
+- name: set last host
+  set_fact:
+    last_host: "{{ (last_ip.split('/') | first).split('.') | last | int + 1 }}"
+
+- name: ensure client configuration directory exists
+  file:
+    path: "{{ client_cfg_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- include_tasks: configure_peer.yml
+  with_sequence: start=0 end={{ clients.count | int }} format={{ clients.format }}
+
+- name: reset last client private key from facts 
+  set_fact:
+    pvtkey_content: 

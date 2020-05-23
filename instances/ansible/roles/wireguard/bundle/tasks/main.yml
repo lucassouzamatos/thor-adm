@@ -1,0 +1,31 @@
+---
+
+- shell: date +%d-%m-%Y
+  register: now_out
+
+- set_fact:
+    dest_dir: "{{ local_basedir }}/{{ now_out.stdout }}"
+
+- name: ensure client configuration directory exists
+  connection: local
+  vars:
+    ansible_become: false
+  file:
+    path: "{{ dest_dir }}"
+    state: directory
+    mode: 0700
+
+- name: list all client public keys
+  find:
+    paths: "{{ client_cfg_dir }}"
+    file_type: file
+  register: clients
+
+- name: download client configurations from remote node
+  fetch:
+    src: "{{ item.path }}"
+    dest: "{{ dest_dir }}/"
+    mode: 0400
+    flat: yes
+  with_items:
+    - "{{ clients.files }}"

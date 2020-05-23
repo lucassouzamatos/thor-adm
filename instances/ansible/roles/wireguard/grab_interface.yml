@@ -1,0 +1,7 @@
+---
+
+- shell: "wg | grep interface | awk '{ printf $2 }'"
+  register: wg_if_proc
+
+- set_fact:
+    wg_if: "{{ wg_if_proc.stdout }}"

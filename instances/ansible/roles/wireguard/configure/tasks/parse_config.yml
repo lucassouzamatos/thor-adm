@@ -1,0 +1,25 @@
+---
+
+- name: get private key content
+  shell: cat {{ wg_basedir }}/{{ pvt_file }}
+  register: pvtkey_content
+  no_log: true
+
+- name: create template configuration
+  template:
+    src: wg.conf.j2
+    dest: "{{ conf_file }}"
+    backup: yes
+    owner: root
+    group: root
+    mode: 0600  
+
+- name: remove omitted values
+  replace:
+    path: "{{ conf_file }}"
+    regexp: '.*__omit_place_holder__.*'
+    replace: ""
+
+- name: reset server private key content from facts
+  set_fact:
+    pvtkey_content:

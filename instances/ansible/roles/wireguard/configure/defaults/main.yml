@@ -1,0 +1,5 @@
+---
+
+# configuration
+wg_interface: wg0
+conf_file: "{{ wg_basedir }}/{{ wg_interface }}.conf"
