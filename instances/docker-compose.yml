@@ -33,9 +33,9 @@ services:
       " 
         echo "Initializing..."
         sleep 5;
-        while ! test -f '/controls/lock';*\
+        while ! test -f '/controls/lock';\
           do echo 'Waiting for config file...';\
-          sleep 1;\
-        done
+          sleep 3;
+        done;
         ansible-playbook /ansible/setup.yml -i /ansible/testing
       "
