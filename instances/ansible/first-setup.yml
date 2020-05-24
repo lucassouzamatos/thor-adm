@@ -12,6 +12,9 @@
 - hosts: localhost
   tasks:
     - include_role:
+        name: vars_helper
+
+    - include_role:
         name: aws_config
       vars:
         config: "{{ setup_manager_config }}"
@@ -198,8 +201,13 @@
           - "{{ ec2_deployer_policy.policy.arn }}"
       register: sim_deployer_user
 
+    - name: check wheter simulation deployer credentials exists
+      stat:
+        path: "{{ sim_deployer_config }}"
+      register: deployer_config_stat
+
     - set_fact:
-        should_create_deployer_keys: "{{ sim_deployer_user.changed }}"
+        should_create_deployer_keys: "{{ sim_deployer_user.changed or not deployer_config_stat.stat.exists }}"
       
     - set_fact:
         should_create_deployer_keys: true
@@ -229,12 +237,13 @@
             --output json --query AccessKey
         register: sim_deployer_access_keys
         
-      - name: transform credentials in recognazable format
+      - name: transform credentials in recognizable format
         no_log: yes
         set_fact:
           deployer_creds:
             access_key_id: "{{ access_keys.AccessKeyId }}"
             secret_access_key: "{{ access_keys.SecretAccessKey }}"
+            default_region: "{{ inst_region }}"
         vars:
           access_keys: "{{ sim_deployer_access_keys.stdout | from_json }}"
 

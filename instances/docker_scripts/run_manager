@@ -1,0 +1,22 @@
+#!/bin/sh
+
+source ansible_lock_vars
+
+lock_full_path="$(abs_path $lockfile)"
+first_time_path="$(abs_path $first_time_lockfile)"
+
+touch "$lock_full_path"
+
+if ! ${ANSIBLE_FORCE_FIRST_TIME:-false} && test -f "$first_time_path"; then
+    # if we remove the lock too fast, the monitor will not event notice it
+    sleep 5
+else
+    call_ansible first-setup.yml
+    exit_code="$?"
+
+    touch "$first_time_path"
+fi
+
+rm "$lock_full_path"
+
+exit "${exit_code:-0}"

@@ -3,8 +3,8 @@
 # Edit at https://www.gitignore.io/?templates=ssh,ansible,visualstudiocode
 
 ### Custom Application Ignored Files ###
-instances/ansible/vars/
 **/group_vars/*.yml
+**/keys/**/*.json
 
 ### Environment ###
 *.env
@@ -16,8 +16,6 @@ instances/ansible/vars/
 **/.ssh/id_*
 **/.ssh/*_id_*
 **/.ssh/known_hosts
-
-**/aws.json
 
 ### VisualStudioCode ###
 .vscode/*

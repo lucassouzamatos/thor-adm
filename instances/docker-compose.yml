@@ -4,38 +4,31 @@ services:
   setup:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.setup
     volumes:
-      - ./keys:/keys
-      - ./ansible:/ansible
-      - ./controls:/controls
+      - ./keys/manager:${DOCKER_ANS_MANAGER_KEYS_VOLUME}
+      - ./keys/deployer:${DOCKER_ANS_DEPLOYER_KEYS_VOLUME}
+      
+      - ./ansible:${DOCKER_ANS_ANSIBLE_VOLUME}:ro
+      - ./.vars/:${DOCKER_ANS_VARS_VOLUME}
+      - ./.controls:${ANSIBLE_LOCKPATH}
     container_name: setup
-    command: > 
-      "
-        test -f '/keys/deployer/aws_sim_deployer.json' ||\
-        ansible-playbook /ansible/first-setup.yml -i /ansible/testing
-      "
-    environment:
-      - is_setup=1
+    command: -c run_manager
+    env_file:
+      - .env
 
   deployer:
     depends_on:
       - setup
     volumes:
-      - ./keys/deployer:/keys
-      - ./ansible:/ansible
-      - ./controls:/controls
+      - ./keys/deployer:${DOCKER_ANS_DEPLOYER_KEYS_VOLUME}
+      - ./ansible:${DOCKER_ANS_ANSIBLE_VOLUME}:ro
+      - ./.vars/:${DOCKER_ANS_VARS_VOLUME}
+      - ./.controls:${ANSIBLE_LOCKPATH}
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.deployer
     container_name: deployer
-    command: > 
-      " 
-        echo "Initializing..."
-        sleep 5;
-        while ! test -f '/controls/lock';\
-          do echo 'Waiting for config file...';\
-          sleep 3;
-        done;
-        ansible-playbook /ansible/setup.yml -i /ansible/testing
-      "
+    command: -c run_deployer
+    env_file:
+      - .env

@@ -5,11 +5,6 @@
     AWS_DEFAULT_REGION: "{{ inst_region }}"
   
   tasks:
-    - include_role:
-        name: aws_config
-      vars: 
-        config: "{{ sim_deployer_config }}"
-
     - set_fact:
         vpn_server_instance: "{{ instance_state | default('present') }}"
 

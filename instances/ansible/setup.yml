@@ -5,10 +5,11 @@
     - include_role:
         name: vars_helper
 
-- import_playbook: first-setup.yml
-  tags:
-    - first-setup
-  
+    - include_role:
+        name: aws_config
+      vars: 
+        config: "{{ sim_deployer_config }}"
+
 - import_playbook: vpn-border.yml
   when: is_vpn_operator
   tags:
