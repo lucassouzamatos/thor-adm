@@ -1,0 +1,13 @@
+---
+
+- name: check where the default setup variables file is present
+  stat:
+    path: "{{ default_setup_variables_file | mandatory }}"
+  register: default_setup_vars_stat
+  connection: local
+
+- name: include deployer setup variables
+  include_vars:
+    file: "{{ default_setup_variables_file }}"
+  when: default_setup_vars_stat.stat.exists
+  connection: local

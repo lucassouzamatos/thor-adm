@@ -4,7 +4,7 @@
   register: now_out
 
 - set_fact:
-    dest_dir: "{{ local_basedir }}/{{ now_out.stdout }}"
+    dest_dir: "{{ local_basedir }}/{{ ansible_host }}-{{ now_out.stdout }}"
 
 - name: ensure client configuration directory exists
   connection: local

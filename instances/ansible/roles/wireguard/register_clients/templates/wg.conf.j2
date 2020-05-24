@@ -1,16 +1,13 @@
 [Interface]
 PrivateKey = {{ pvtkey_content.stdout }} 
 Address = {{ client_addr }}
-
 {% for name in ['DNS', 'Table', 'MTU', 'PreUp', 'PostUp', 'PreDown', 'PostDown'] -%}
-    {{ name }} = {{ wg_client[name | lower] | default(omit) }}
+{{ name }} = {{ wg_client[name | lower] | default(omit) }}
 {%- endfor %}
-
 [Peer]
 PublicKey = {{ local_pubkey }}
 AllowedIps = {{ local_addr }}/32,{{ subnet_cidr_block }}
 Endpoint = {{ ansible_host }}:{{ wg_listen_port }}
-
-{% for name in ['PersistentKeepAlive', 'Endpoint'] -%}
-    {{ name }} = {{ peer[name | lower] | default(omit) }}
-{%- endfor -%}
+{% for name in ['PersistentKeepAlive', 'Endpoint'] %}
+{{ name }} = {{ peer[name | lower] | default(omit) }}
+{% endfor %}

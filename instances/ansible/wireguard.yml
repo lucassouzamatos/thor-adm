@@ -2,8 +2,11 @@
 
 - hosts: vpn_servers
   vars:
-    _server_index: 0
+      _server_index: 0    
   tasks:
+    - include_role:
+        name: vars_helper
+
     - name: update server packages
       apt:
         update_cache: yes
@@ -29,16 +32,12 @@
         state: reloaded
       when: disable_ssh_x11forwarding.changed
 
-    - set_fact:
+    - include_role:
+        name: wireguard/server
+      vars:
         wg_server:
           preup: |
             iptables -t nat -A POSTROUTING -s {{ local_addr }}/{{ netmask }} -d {{ subnet_cidr_block }} -j MASQUERADE
-
-    - debug:
-        var: wg_server
-
-    - include_role:
-        name: wireguard/server
       tags:
         - vpn-server
 

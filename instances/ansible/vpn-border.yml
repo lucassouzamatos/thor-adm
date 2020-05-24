@@ -15,6 +15,7 @@
 
     - name: ensure vpn server instance is {{ vpn_server_instance }}
       ec2:
+        vpc_subnet_id: "{{ subnet_id }}"
         instance_ids: "{{ instance_ids | default(omit) }}" 
         image: "{{ image_id }}"
         instance_type: t2.micro
@@ -39,15 +40,31 @@
           # reuse_existing_ip_allowed: "{{ reuse_existing_ip | default(True) }}"
         with_items:
           - "{{ attached_netifs.network_interfaces }}"
+
+      - name: gather all new addresses associated with instances
+        ec2_eip_info:
+          filters:
+            instance-id: "{{ vpn_server_inst.instance_ids }}"
+        register: inst_addresses
+
+      - name: execute post-create with instances associated elastic ips
+        include_role:
+          name: post_instance_create
+        vars:
+          inst_id: "{{ item.instance_id }}" 
+          inst_ip: "{{ item.public_ip }}"
+          host_group: vpn_servers
+        with_items: 
+          - "{{ inst_addresses.addresses }}"
       when: vpn_server_inst.changed
 
-    - name: execute post-create role
+    - name: execute post-create with instances own addresses
       include_role:
-        name: post-instance-create
+        name: post_instance_create
       vars:
         inst_id: "{{ item.id }}" 
         inst_ip: "{{ item.public_ip }}"
         host_group: vpn_servers
-      with_items:
+      with_items: 
         - "{{ vpn_server_inst.instances }}"
-    
+      when: not vpn_server_inst.changed

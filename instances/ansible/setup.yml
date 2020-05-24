@@ -2,15 +2,8 @@
 
 - hosts: localhost
   tasks:
-    - name: check where the default setup variables file is present
-      stat:
-        path: "{{ default_setup_variables_file }}"
-      register: default_setup_vars_stat
-
-    - name: include deployer setup variables
-      include_vars:
-        file: "{{ default_setup_variables_file }}"
-      when: default_setup_vars_stat.stat.exists
+    - include_role:
+        name: vars_helper
 
 - import_playbook: first-setup.yml
   tags:

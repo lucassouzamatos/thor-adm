@@ -3,7 +3,7 @@
 - name: wait aws say instances is fine to go
   shell: aws ec2 wait instance-status-ok --instance-ids {{ inst_id }}
 
-- name: gather instance public ssh keys as safe as possible
+- name: gather instance public ssh keys from {{ inst_ip }} as safe as possible
   # --no-latest trick show all console log :)
   shell: >-
     aws ec2 get-console-output --instance-id {{ inst_id }} --output text --no-latest | \
@@ -25,6 +25,7 @@
     path: "{{ default_ssh_dir | expanduser }}/known_hosts"
     mode: 0644
     create: yes
+    marker: '{mark} GATHERED PUBLIC KEY FOR {{ inst_ip }}'
     block: | 
       {% for key in inst_ssh_pubkeys -%}
       {{ inst_ip }} {{ key }}

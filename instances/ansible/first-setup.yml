@@ -223,12 +223,14 @@
           - delete-existing-deployer-keys
 
       - name: download deployer access keys
+        no_log: true
         shell: >-
           aws iam create-access-key --user-name {{ users.simulation_deployer }} \
             --output json --query AccessKey
         register: sim_deployer_access_keys
         
       - name: transform credentials in recognazable format
+        no_log: yes
         set_fact:
           deployer_creds:
             access_key_id: "{{ access_keys.AccessKeyId }}"
