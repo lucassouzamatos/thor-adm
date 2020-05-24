@@ -17,6 +17,8 @@ instances/ansible/vars/
 **/.ssh/*_id_*
 **/.ssh/known_hosts
 
+**/aws.json
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json

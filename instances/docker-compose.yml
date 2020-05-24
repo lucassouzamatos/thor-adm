@@ -1,10 +1,41 @@
 version: '3'
 
 services:
-  api:
-    restart: always
+  setup:
     build:
       context: .
       dockerfile: Dockerfile
-    # volumes:
-    #   - ./ansible-config:/root/ansible-config
+    volumes:
+      - ./keys:/keys
+      - ./ansible:/ansible
+      - ./controls:/controls
+    container_name: setup
+    command: > 
+      "
+        test -f '/keys/deployer/aws_sim_deployer.json' ||\
+        ansible-playbook /ansible/first-setup.yml -i /ansible/testing
+      "
+    environment:
+      - is_setup=1
+
+  deployer:
+    depends_on:
+      - setup
+    volumes:
+      - ./keys/deployer:/keys
+      - ./ansible:/ansible
+      - ./controls:/controls
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deployer
+    command: > 
+      " 
+        echo "Initializing..."
+        sleep 5;
+        while ! test -f '/controls/lock';\
+          do echo 'Waiting for config file...';\
+          sleep 3;
+        done;
+        ansible-playbook /ansible/setup.yml -i /ansible/testing
+      "

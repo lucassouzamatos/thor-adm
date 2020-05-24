@@ -1,0 +1,38 @@
+---
+
+# where credentials should be loaded
+setup_manager_config: /keys/aws.json
+sim_deployer_config: /keys/aws_sim_deployer.json
+
+# User names section
+users:
+  simulation_deployer: ubuntu-sim-deployer
+
+volume_size: "8"
+inst_region: "{{ lookup('pipe', 'aws configure get default.region') or lookup('env', 'AWS_DEFAULT_REGION') }}"
+# ssh_pubkey: "ssh-ed25519 AAA...== email@example.com"
+
+default_ssh_dir: ~/.ssh
+default_vars_dir: vars 
+
+# public ip gathering
+cache_dir: ~/.cache/my_pub_cidr
+use_my_network: true
+
+# vpn operations section
+is_vpn_operator: false
+vpn_instances_count: 1
+wg_listen_port: 20476 # required when is_vpn_operator is true
+teammate_cidrs: []
+
+# defines where objects gathered in first-setup and allowed for deployer user
+# in IAM policy will be saved
+default_setup_variables_file: "{{ [default_vars_dir, users.simulation_deployer + '.yml'] | join('/') }}"
+
+# VPN server section
+# subnet_id: subnet-6e951735
+# key_id: test-keypair
+# image_id: ami-001c16a3a4f5d85f1
+# netif_id: eni-09c55d6d885354a52
+# instance_id: i-0c333beeb40dc7e2b
+# instance_state: running
