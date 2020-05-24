@@ -1,10 +1,14 @@
 FROM alpine:edge
 USER root
 
-# VOLUME instances:ro vpnkeys
+RUN apk --update add bash gcc musl-dev python3-dev libffi-dev openssl-dev py3-pip
 
-RUN apk --update add bash gcc musl-dev python3-dev libffi-dev openssl-dev py3-pip openssh-client
+RUN test -z "$is_setup" ||\
+  apk --update add bash gcc musl-dev python3-dev libffi-dev openssl-dev py3-pip openssh-client
 
-RUN pip3 install pip ansible awscli boto boto3 -U
+RUN pip3 install pip ansible awscli boto3 -U
 
-ENTRYPOINT ["/bin/bash"]
+RUN test -z "$is_setup" ||\
+  pip3 install pip ansible awscli boto boto3 -U 
+
+ENTRYPOINT ["/bin/bash", "-c"]
