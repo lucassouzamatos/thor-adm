@@ -4,6 +4,13 @@
   apt:
     name: wireguard-tools
 
+- name: allows server to forward request like a router
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: yes
+    reload: yes
+
 - name: delete wireguard base directory
   file:
     path: "{{ wg_basedir }}"
