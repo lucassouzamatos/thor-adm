@@ -1,8 +1,8 @@
 ---
 
 # where credentials should be loaded
-setup_manager_config: null
-sim_deployer_config: aws_sim_deployer.json
+setup_manager_config: keys/manager/config.json
+sim_deployer_config: keys/deployer/config.json
 
 # User names section
 users:
