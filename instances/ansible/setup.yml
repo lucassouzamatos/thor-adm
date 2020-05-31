@@ -16,17 +16,10 @@
     - vpn-border
 
 - hosts: localhost
-  vars:
-    ssh_dir: "{{ '~/.ssh' | expanduser }}"
   tasks:
-    - name: ensure destination ssh directory exists
-      file:
-        path: "{{ ssh_dir }}"
-        state: directory
-
-    # ugly!
+    # uses cross-platform ssh agent to handle adding private keys
     - name: ensure ansible finds ssh configurations at runtime
-      shell: find {{ default_ssh_dir | expanduser }} -exec cp -r '{}' {{ ssh_dir }} \; 
+      shell: ssh-add $(ls {{ default_ssh_dir | expanduser }}/id_* | egrep -v ".pub$")
 
 - import_playbook: wireguard.yml
   when: is_vpn_operator
