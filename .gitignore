@@ -6,6 +6,14 @@
 **/group_vars/*.yml
 **/keys/**/*.json
 
+instances/keys/
+instances/.controls/
+instances/.vars/
+
+instances/ansible/keys/
+instances/ansible/vars/
+instances/ansible/*/hosts
+
 ### Environment ###
 *.env
 
