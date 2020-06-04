@@ -19,7 +19,11 @@
   tasks:
     # uses cross-platform ssh agent to handle adding private keys
     - name: ensure ansible finds ssh configurations at runtime
-      shell: ssh-add $(ls {{ default_ssh_dir | expanduser }}/id_* | egrep -v ".pub$")
+      shell: ssh-add -q $(ls {{ default_ssh_dir | expanduser }}/id_* | egrep -v ".pub$")
+      retries: 3
+      delay: 5
+      register: ssh_add_result
+      until: ssh_add_result.rc == 0
 
 - import_playbook: wireguard.yml
   when: is_vpn_operator
