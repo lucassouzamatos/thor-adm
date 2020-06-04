@@ -29,6 +29,14 @@ teammate_cidrs: []
 # in IAM policy will be saved
 default_setup_variables_file: "{{ [default_vars_dir, users.simulation_deployer + '.yml'] | join('/') }}"
 
+# simulation instances section
+#image_ids:
+#  vpn: ami-bla-bla
+#  sim: 
+#    - ami-yada-yada
+#    - ami-yada-yada
+sim_instances_count: 3
+
 # VPN server section
 # subnet_id: subnet-6e951735
 # key_id: test-keypair

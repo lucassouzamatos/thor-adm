@@ -38,8 +38,10 @@
           register: ami_ubuntu
 
         - set_fact: 
-            image_id: "{{ ami_ubuntu.images[0].image_id }}"
-      when: image_id is not defined
+            image_ids: 
+              vpn: "{{ ami_ubuntu.images[0].image_id }}"
+              sim: "{{ ami_ubuntu.images[0].image_id }}"
+      when: image_ids is not defined
     
     # gather security group ids
     # there are two paths to obtain the groups ids, such as:
@@ -248,7 +250,7 @@
         content: |
           ---
           my_cidr: {{ my_cidr }}
-          image_id: {{ image_id }}
+          image_ids: {{ image_ids }}
           key_id: {{ key_id }}
           sg_ids: {{ sg_ids }}
           subnet_id: {{ subnet_id }}

@@ -1,0 +1,19 @@
+---
+
+- hosts: localhost
+  environment:
+    AWS_DEFAULT_REGION: "{{ inst_region }}"
+  
+  tasks:
+    - include_role:
+        name: vars_helper
+
+    - include_role:
+        name: aws_config
+      vars: 
+        config: "{{ sim_deployer_config }}"
+    
+    - include: create-simulation-instance.yml
+      loop: "{{ range(0, sim_instances_count) | list }}" # maximum number of loops 
+      loop_control:
+        index_var: index

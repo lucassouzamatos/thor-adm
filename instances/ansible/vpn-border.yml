@@ -12,7 +12,7 @@
       ec2:
         vpc_subnet_id: "{{ subnet_id }}"
         instance_ids: "{{ instance_ids | default(omit) }}" 
-        image: "{{ image_id }}"
+        image: "{{ image_ids.vpn }}"
         instance_type: t2.micro
         key_name: "{{ key_id }}"
         group_id: "{{ sg_ids | first }}"
