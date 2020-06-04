@@ -18,8 +18,6 @@
                 "ec2:AllocateAddress",
                 {%- endif -%}
                 
-                "ec2:RegisterImage",
-                "ec2:CreateImage",
                 "ec2:GetConsoleOutput",
                 "ec2:DescribeInstances",
                 "ec2:DescribeInstanceStatus",
@@ -37,7 +35,9 @@
             "Effect": "Allow",
             "Action": "ec2:RunInstances",
             "Resource": [
+		{% for image_id in (image_ids.sim | list) + [image_ids.vpn] -%}
                 "arn:aws:ec2:*::image/{{ image_id }}",
+		{%- endfor -%}
                 "arn:aws:ec2:*:*:key-pair/{{ key_id }}",
 
                 {%- for group in sg_ids -%}
