@@ -22,7 +22,7 @@
   vars:
     inst_ssh_pubkeys: "{{ inst_console_log.stdout_lines[1:-1] }}"
   blockinfile:
-    path: "{{ ~/.ssh | expanduser }}/known_hosts"
+    path: "{{ '~/.ssh' | expanduser }}/known_hosts"
     mode: 0644
     create: yes
     marker: '{mark} GATHERED PUBLIC KEY FOR {{ inst_ip }}'
