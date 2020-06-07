@@ -21,7 +21,7 @@
     - name: ensure ansible finds ssh configurations at runtime
       shell: ssh-add -q $(ls {{ default_ssh_dir | expanduser }}/id_* | egrep -v ".pub$")
       retries: 3
-      delay: 5
+      delay: 15
       register: ssh_add_result
       until: ssh_add_result.rc == 0
 
