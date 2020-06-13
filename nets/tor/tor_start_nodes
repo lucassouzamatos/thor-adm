@@ -1,0 +1,68 @@
+#!/bin/sh
+set -e
+
+watch_logs=false
+
+target=/etc/tor
+logdir=$PWD
+
+usage() {
+  _usage "$1" <<EOF
+Usage: $(basename $0) [-dth] NODE_TYPE [TOR_OPTS]
+EOF
+}
+
+while [[ "$1" = -* ]]; do
+  case "$1" in
+    -d|--dry-run)
+	    dryrun=true
+	    ;;
+    -o|--output)
+        output=$2
+        shift
+        ;;
+    -t|--torrc-target)
+	    target=$2
+	    shift
+	    ;;
+    -l|--log-dir)
+	    logdir=$2
+	    shift
+	    ;;
+    -w|--watch-logs)
+	    watch_logs=true
+	    ;;
+    -h|--help)
+	    usage
+	    ;;
+    *)
+	    usage "Unknow option: $1"
+	    ;;
+  esac
+  shift
+done
+
+type=$1
+
+if [ -z "$type" ]; then
+  usage "Missing node type argument."
+fi
+
+shift
+
+torrcs=$(find ${target} -type f -name "torrc.${type}*")
+
+if [ ${#torrcs[*]} == "0" ]; then
+  usage "No torrc file found."
+fi
+
+# strip trailing backslash
+logdir="${logdir%/}"
+
+for torrc in $torrcs; do
+  log_file="${logdir}/$(basename ${torrc}).log"
+  run_job "tor -f ${torrc} $@" "${log_file}"
+done
+
+# maybe watch logs inside directory
+$watch_logs && run_it tail -f ${logdir}/*${type}*.log

@@ -1,0 +1,27 @@
+#!/bin/sh
+
+lockpath="${ANSIBLE_LOCKPATH:-$1}"
+lockfile="${ANSIBLE_LOCKFILE:-$2}"
+first_time_lockfile="${ANSIBLE_FIRST_TIME_LOCKFILE:-$3}"
+
+if [ -z "$lockpath" ] || [ -z "$lockfile" ]; then
+    cat <<EOF > /dev/stderr 2>&1
+Usage: $(basename $0) PATH_TO_LOOK LOCKFILE FIRST_TIME_LOCKFILE
+
+Environment variables:
+    When such variables are present, they are used instead of path arguments. 
+        - ANSIBLE_LOCKPATH
+        - ANSIBLE_LOCKFILE
+        - ANSIBLE_FIRST_TIME_LOCKFILE
+EOF
+    exit 128
+fi
+
+abs_path() {
+    echo "${lockpath%/}/$1"
+}
+
+call_ansible() {
+    cd "${DOCKER_ANS_ANSIBLE_VOLUME}"
+    ANSIBLE_CONFIG="$(pwd)/ansible.cfg" ansible-playbook "$@"
+}

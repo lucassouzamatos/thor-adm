@@ -1,0 +1,51 @@
+#!/bin/sh
+
+dryrun=false
+output=/dev/stdout
+line_mask="="
+
+_usage() {
+  local err=
+  local message=$(cat /dev/fd/0)
+  if [ -n "${1}" ]; then
+    err="$(output=/dev/stdout error $1)\n\n"
+  fi
+  echo -e "$err$message" > /dev/stderr
+  exit 128
+}
+
+_out() {
+  echo "$@" >> ${output}
+}
+
+_log() {
+  _out "[$1] ${@:2}"
+}
+
+info() {
+  _log INFO $@
+}
+
+error() {
+  _log ERROR $@
+}
+
+run_it() {
+  info "Calling: $@"
+  $dryrun || $@
+}
+
+run_job() {
+  info "Starting: $1 | Log file: $2"
+  if ! $dryrun; then
+    $1 > $2 2>&1 &
+    info "PID of '$1': $!"
+  fi
+}
+
+long_line() {
+  local cols=$(tput cols)
+  local mask=$(printf "%-${cols}s" "$line_mask" | sed "s| |\\${line_mask}|g")
+  _out
+  _out "$mask"
+}

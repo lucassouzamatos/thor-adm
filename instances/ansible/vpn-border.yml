@@ -5,11 +5,6 @@
     AWS_DEFAULT_REGION: "{{ inst_region }}"
   
   tasks:
-    - include_role:
-        name: aws_config
-      vars: 
-        config: "{{ sim_deployer_config }}"
-
     - set_fact:
         vpn_server_instance: "{{ instance_state | default('present') }}"
 
@@ -17,7 +12,7 @@
       ec2:
         vpc_subnet_id: "{{ subnet_id }}"
         instance_ids: "{{ instance_ids | default(omit) }}" 
-        image: "{{ image_id }}"
+        image: "{{ image_ids.vpn }}"
         instance_type: t2.micro
         key_name: "{{ key_id }}"
         group_id: "{{ sg_ids | first }}"

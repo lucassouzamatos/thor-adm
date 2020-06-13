@@ -1,0 +1,5 @@
+%include /etc/tor/templates/hs-default
+
+DataDirectory /var/lib/tor-data-hs0
+HiddenServiceDir /var/hss/hs0
+HiddenServicePort 80 127.0.0.1:7000

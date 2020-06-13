@@ -1,0 +1,5 @@
+FROM instances_setup
+
+RUN apk --update add inotify-tools
+
+RUN pip3 install pip boto -U 

@@ -1,0 +1,39 @@
+---
+
+# Used internally to create many instances. It needs the loop index to process it accordingly.
+#
+# It may be runned out of range, because it controls where to stop running. That is better than having duplicate
+# code detecting when to stop creating instances.
+
+# it decides how many instances for each image to create
+- set_fact:
+    ec2_count: "{{ (sim_instances_count / (image_ids.sim | list | count)) | round }}" 
+  when: ec2_count is not defined
+
+# initialize the counter of the number of loops we have runned
+- set_fact:
+    _created_instances_index: "{{ index + 1 }}" 
+
+# calculate how many instances we should have runned based on how many loops we did and how many instances per loop
+- set_fact:
+    _instances_count: "{{ _created_instances_index | int * ec2_count | int }}" 
+
+# this is the magic to fight created instances overflow 
+# when the number of already created instances is higher than the maximum count, it decreases the difference
+#
+# it also change the loop variable to keep looping to false, because we have come to the end
+- set_fact:
+    ec2_count: "{{ ec2_count | int - (_instances_count | int - sim_instances_count) }}"
+    _last_index_to_run: "{{ _created_instances_index }}"
+  when: _instances_count | int > sim_instances_count
+
+- ec2:
+    vpc_subnet_id: "{{ subnet_id }}"
+    image: "{{ image_ids.sim[index] | default(omit) }}"
+    instance_type: t2.micro
+    key_name: "{{ key_id }}"
+    group_id: "{{ sg_ids | last }}"
+    wait: yes 
+    count: "{{ ec2_count | int }}"
+  when: _last_index_to_run is not defined or _last_index_to_run == _created_instances_index 
+

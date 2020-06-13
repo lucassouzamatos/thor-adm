@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+source ansible_lock_vars
+
+inotifywait -m -q -e delete "$lockpath" |\
+    while read path action file; do 
+        [ "$file" = "$lockfile" ] && pkill -INT inotifywait
+    done
+
+call_ansible setup.yml

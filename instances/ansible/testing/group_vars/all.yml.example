@@ -1,8 +1,8 @@
 ---
 
 # where credentials should be loaded
-setup_manager_config: null
-sim_deployer_config: aws_sim_deployer.json
+setup_manager_config: keys/manager/config.json
+sim_deployer_config: keys/deployer/config.json
 
 # User names section
 users:
@@ -20,7 +20,7 @@ cache_dir: ~/.cache/my_pub_cidr
 use_my_network: true
 
 # vpn operations section
-is_vpn_operator: false
+is_vpn_operator: true 
 vpn_instances_count: 1
 wg_listen_port: 20476 # required when is_vpn_operator is true
 teammate_cidrs: []
@@ -28,6 +28,14 @@ teammate_cidrs: []
 # defines where objects gathered in first-setup and allowed for deployer user
 # in IAM policy will be saved
 default_setup_variables_file: "{{ [default_vars_dir, users.simulation_deployer + '.yml'] | join('/') }}"
+
+# simulation instances section
+#image_ids:
+#  vpn: ami-bla-bla
+#  sim: 
+#    - ami-yada-yada
+#    - ami-yada-yada
+sim_instances_count: 3
 
 # VPN server section
 # subnet_id: subnet-6e951735

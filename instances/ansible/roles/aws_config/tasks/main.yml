@@ -1,5 +1,14 @@
 ---
 
+- stat:
+    path: "{{ config }}"
+  register: config_stat
+
+- name: ensure configuration file exists
+  fail: 
+    msg: Configuration file {{ config }} does not exists.
+  when: not config_stat.stat.exists
+
 - name: read aws configure json file in memory
   shell: cat {{ config }}
   register: aws_cfg_out

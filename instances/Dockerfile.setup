@@ -1,0 +1,16 @@
+FROM alpine:edge
+USER root
+
+RUN apk --update add bash gcc musl-dev python3-dev libffi-dev openssl-dev py3-pip openssh-client
+
+RUN pip3 install pip ansible awscli boto3 -U
+
+ADD docker_scripts /docker_scripts
+
+RUN chmod -R 755 /docker_scripts
+
+RUN chmod 644 /docker_scripts/*_vars
+
+ENV PATH="${PATH}:/docker_scripts"
+
+ENTRYPOINT ["/bin/bash"]

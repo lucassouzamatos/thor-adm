@@ -12,7 +12,7 @@ local_addr: "{{ network }}.1"
 netmask: 24 
 
 # directory where client wireguard tunnels will be downloaded
-local_basedir: client-configs
+local_basedir: "{{ deployer_keys_vol }}/client-configs"
 
 # default directory used for wireguard configuration.
 # generally there is not need to change this and it is

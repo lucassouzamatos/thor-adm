@@ -12,6 +12,9 @@
 - hosts: localhost
   tasks:
     - include_role:
+        name: vars_helper
+
+    - include_role:
         name: aws_config
       vars:
         config: "{{ setup_manager_config }}"
@@ -35,8 +38,10 @@
           register: ami_ubuntu
 
         - set_fact: 
-            image_id: "{{ ami_ubuntu.images[0].image_id }}"
-      when: image_id is not defined
+            image_ids: 
+              vpn: "{{ ami_ubuntu.images[0].image_id }}"
+              sim: "{{ ami_ubuntu.images[0].image_id }}"
+      when: image_ids is not defined
     
     # gather security group ids
     # there are two paths to obtain the groups ids, such as:
@@ -45,59 +50,40 @@
     #   which needs access from home and teammate's home. SSH access is limited
     #   to operator home only.
     - block:
-        - name: ensure cache directory exists
-          file:
-            path: "{{ cache_dir }}"
-            state: directory
+      - name: ensure cache directory exists
+        file:
+          path: "{{ cache_dir }}"
+          state: directory
 
-        - include_role:
-            name: my_pub_cidr
+      - include_role:
+          name: my_pub_cidr
+        when: my_cidr is not defined 
 
-        - block:  
-            - ec2_group:
-                name: vpn-connection-hole
-                description: Default SSH and Wireguard rules for home connection
-                rules:
-                  - proto: tcp
-                    ports: 22
-                    cidr_ip: "{{ my_cidr }}"
+      - ec2_group:
+          name: vpn-connection-hole
+          description: Default SSH and Wireguard rules for home connection
+          rules:
+            - proto: tcp
+              ports: 22
+              cidr_ip: "{{ my_cidr }}"
 
-                  - proto: udp
-                    ports: "{{ wg_listen_port }}"
-                    cidr_ip: "{{ [my_cidr] + teammate_cidrs }}"
-              register: sg_vpn
+            - proto: udp
+              ports: "{{ wg_listen_port }}"
+              cidr_ip: "{{ [my_cidr] + teammate_cidrs }}"
+        register: sg_vpn
 
-            - ec2_group:
-                name: intranet-ssh-hole
-                description: Default SSH rules for private network
-                rules:
-                  - proto: tcp
-                    ports: 
-                      - 22
-                      - 3080
-                    cidr_ip: 0.0.0.0/0  # XXXX is it in some way insecure?
-              register: sg_ssh
-            
-            - set_fact:
-                sg_ids:
-                  - "{{ sg_vpn.group_id }}" # vpn server group 
-                  - "{{ sg_ssh.group_id }}" # dummy instances group
-          when: is_vpn_operator
-
-        - block:
-            - ec2_group:
-                name: ssh-hole
-                description: Default SSH rules for home connection
-                rules:
-                  - proto: tcp
-                    ports: 22
-                    cidr_ip: "{{ my_cidr }}"
-              register: sg_ssh
-            
-            - set_fact:
-                sg_ids:
-                  - "{{ sg_ssh.group_id }}"
-          when: not is_vpn_operator
+      - ec2_group:
+          name: intranet-ssh-hole
+          description: Default SSH rules for private network
+          rules:
+            - proto: all
+              group_id: "{{ sg_vpn.group_id }}"
+        register: sg_ssh
+      
+      - set_fact:
+          sg_ids:
+            - "{{ sg_vpn.group_id }}" # vpn server group 
+            - "{{ sg_ssh.group_id }}" # dummy instances group
       when: sg_ids is not defined 
     
     # gather vpc subnet id, there is no need to create a custom subnet network by now, so
@@ -198,8 +184,13 @@
           - "{{ ec2_deployer_policy.policy.arn }}"
       register: sim_deployer_user
 
+    - name: check wheter simulation deployer credentials exists
+      stat:
+        path: "{{ sim_deployer_config }}"
+      register: deployer_config_stat
+
     - set_fact:
-        should_create_deployer_keys: "{{ sim_deployer_user.changed }}"
+        should_create_deployer_keys: "{{ sim_deployer_user.changed or not deployer_config_stat.stat.exists }}"
       
     - set_fact:
         should_create_deployer_keys: true
@@ -229,12 +220,13 @@
             --output json --query AccessKey
         register: sim_deployer_access_keys
         
-      - name: transform credentials in recognazable format
+      - name: transform credentials in recognizable format
         no_log: yes
         set_fact:
           deployer_creds:
             access_key_id: "{{ access_keys.AccessKeyId }}"
             secret_access_key: "{{ access_keys.SecretAccessKey }}"
+            default_region: "{{ inst_region }}"
         vars:
           access_keys: "{{ sim_deployer_access_keys.stdout | from_json }}"
 
@@ -258,7 +250,7 @@
         content: |
           ---
           my_cidr: {{ my_cidr }}
-          image_id: {{ image_id }}
+          image_ids: {{ image_ids }}
           key_id: {{ key_id }}
           sg_ids: {{ sg_ids }}
           subnet_id: {{ subnet_id }}

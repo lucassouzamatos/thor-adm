@@ -1,0 +1,59 @@
+#!/bin/sh
+set -e
+
+target=/etc/tor
+
+usage() {
+  _usage "$1" <<EOF
+Usage: $(basename $0) [-dth] TYPE COUNT
+EOF
+}
+
+while [[ "$1" = -* ]]; do
+  case "$1" in
+    -d|--dry-run)
+	    dryrun=true
+	    ;;
+    -t|--torrc-taget)
+	    target=$2
+	    shift
+	    ;;
+    -h|--help)
+	    usage
+	    ;;
+    *)
+	    usage "Unknown option: $1"
+  esac
+  shift
+done
+
+type="$1"
+count="$2"
+
+if [ -z "$type" ] || [ -z "$count" ]; then
+  usage "Missing some argument."
+fi
+
+get_torrc() {
+  echo "${target}/torrc.${type}${1}" 
+}
+
+# remove trailing backslash
+target=${target%/}
+base_file=$(get_torrc 0)
+
+# do I have such base file
+if [ ! -f "$base_file" ]; then
+  error "Any base file to generate nodes was found!"
+  error "I looked at: $base_file"
+  exit 2
+fi
+
+index=1
+
+while [ "$index" -le "$count" ]; do
+  dst_torrc="$(get_torrc ${index})"
+  run_it cp ${base_file} ${dst_torrc} 
+  run_it sed -i "s|${type}0|${type}${index}|" ${dst_torrc}
+  index=$(expr $index + 1)
+done

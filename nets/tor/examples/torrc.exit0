@@ -1,0 +1,4 @@
+%include /etc/tor/templates/relay-non-exit
+%include /etc/tor/templates/exit-v4
+
+DataDirectory /var/lib/tor-data-exit0

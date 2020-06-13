@@ -1,0 +1,17 @@
+
+###############################################################################################
+# Default header code to detect helper source file
+
+sh_src_path="${NETS_SRC_PATH:-.}/sh_helpers"
+if [ ! -f "${sh_src_path}" ]; then
+  cat > /dev/stderr <<EOF
+ERROR! Reason: sh_helpers is missing
+Maybe something is wrong with your installation.
+Failing! 
+EOF
+  exit 2
+fi
+
+source ${sh_src_path}
+
+###############################################################################################

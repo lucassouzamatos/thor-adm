@@ -4,6 +4,7 @@
   service:
     name: "wg-quick@{{ wg_interface }}"
     state: "{{ item }}"
+    enabled: true
   with_items:
     - stopped
     - started
