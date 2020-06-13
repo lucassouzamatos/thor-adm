@@ -1,0 +1,4 @@
+%include /etc/tor/templates/default
+
+SocksPort 0
+HiddenServiceVersion 3

@@ -1,0 +1,12 @@
+%include /etc/tor/templates/authority
+
+DataDirectory /var/lib/tor-data-da0
+
+DirPort 9999
+ORPort 3421
+ContactInfo r2-2@anonymous.networks
+
+# Use custom port for controller and socks proxy
+ControlPort 5090
+
+Nickname r22da0

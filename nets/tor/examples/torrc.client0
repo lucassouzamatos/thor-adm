@@ -1,0 +1,3 @@
+%include /etc/tor/templates/default
+
+SocksPort 9050
