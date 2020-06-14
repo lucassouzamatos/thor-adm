@@ -17,13 +17,35 @@
 
 - hosts: localhost
   tasks:
+    - shell: pgrep ssh-agent >/dev/null
+      register: check_ssh_agent
+      ignore_errors: yes
+
+    - shell: ls {{ default_ssh_dir | expanduser }}/id_* | egrep -v ".pub$"
+      register: list_ssh_priv_keys 
+
+    - set_fact:
+        ssh_private_keys: "{{ list_ssh_priv_keys.stdout_lines }}"
+
     # uses cross-platform ssh agent to handle adding private keys
     - name: ensure ansible finds ssh configurations at runtime
-      shell: ssh-add -q $(ls {{ default_ssh_dir | expanduser }}/id_* | egrep -v ".pub$")
+      shell: ssh-add -q {{ item }}
       retries: 3
       delay: 15
       register: ssh_add_result
       until: ssh_add_result.rc == 0
+      when: check_ssh_agent.rc == 0
+      with_items: "{{ ssh_private_keys }}"
+
+    - block:
+        - file:
+            path: "{{ '~/.ssh' | expanduser }}"
+            state: directory
+            
+        - shell: cp {{ ssh_private_keys | join(' ') }} {{ '~/.ssh' | expanduser }}
+
+        - shell: chmod 600 {{ '~/.ssh' | expanduser }}/*
+      when: check_ssh_agent.rc != 0
 
 - import_playbook: wireguard.yml
   when: is_vpn_operator

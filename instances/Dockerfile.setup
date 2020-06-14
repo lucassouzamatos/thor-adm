@@ -11,6 +11,8 @@ RUN chmod -R 755 /docker_scripts
 
 RUN chmod 644 /docker_scripts/*_vars
 
+RUN dos2unix /docker_scripts/*
+
 ENV PATH="${PATH}:/docker_scripts"
 
 ENTRYPOINT ["/bin/bash"]

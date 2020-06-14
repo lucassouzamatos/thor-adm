@@ -8,7 +8,6 @@ services:
     volumes:
       - ./keys/manager:${DOCKER_ANS_MANAGER_KEYS_VOLUME}
       - ./keys/deployer:${DOCKER_ANS_DEPLOYER_KEYS_VOLUME}
-      
       - ./ansible:${DOCKER_ANS_ANSIBLE_VOLUME}:ro
       - ./.vars/:${DOCKER_ANS_VARS_VOLUME}
       - ./.controls:${ANSIBLE_LOCKPATH}
